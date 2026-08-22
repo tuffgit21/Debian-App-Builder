@@ -25,13 +25,22 @@ def vendor_dependencies(package_root: str, package_name: str) -> str:
 import os, sys, shutil, tempfile, subprocess, stat
 
 PACKAGES = {PACKAGES_TO_VENDOR!r}
-vendor_dir = r"{vendor_dir}"
+vendor_dir = {vendor_dir!r}
 
 def remove_readonly(func, path, exc_info):
     os.chmod(path, stat.S_IWRITE)
     func(path)
 
-with tempfile.TemporaryDirectory() as tmp_venv:
+def cleanup_build_dir(path):
+    shutil.rmtree(path, ignore_errors=True)
+    if os.path.exists(path):
+        try:
+            shutil.rmtree(path, onerror=remove_readonly)
+        except OSError:
+            pass
+
+tmp_venv = tempfile.mkdtemp(prefix="debappbuilder-vendor-")
+try:
     # 1. Create isolated build venv
     subprocess.check_call([sys.executable, "-m", "venv", tmp_venv])
     
@@ -41,18 +50,19 @@ with tempfile.TemporaryDirectory() as tmp_venv:
     subprocess.check_call([venv_python, "-m", "pip", "install", "--upgrade", "pip"])
     subprocess.check_call([venv_python, "-m", "pip", "install"] + PACKAGES)
     
-    # 3. Locate site-packages
-    if os.name == "nt":
-        site_packages = os.path.join(tmp_venv, "Lib", "site-packages")
-    else:
-        lib_dir = os.path.join(tmp_venv, "lib")
-        site_packages = [os.path.join(lib_dir, d, "site-packages") for d in os.listdir(lib_dir) if os.path.isdir(os.path.join(lib_dir, d))][0]
+    # 3. Locate site-packages reliably via the venv's own interpreter
+    listing = subprocess.check_output(
+        [venv_python, "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"],
+        text=True,
+    )
+    site_packages = listing.strip()
 
-    ignored = {{"__pycache__", "pip", "pkg_resources", "setuptools", "_distutils_hack"}}
+    ignored = {{"__pycache__", "pip", "pkg_resources", "setuptools", "_distutils_hack", "wheel"}}
 
     # 4. Copy files safely
     for item in os.listdir(site_packages):
-        if item in ignored or item.endswith(".pth"):
+        top_level = item.split("-")[0].lower()
+        if top_level in ignored or item.endswith(".pth"):
             continue
         src = os.path.join(site_packages, item)
         dest = os.path.join(vendor_dir, item)
@@ -67,6 +77,10 @@ with tempfile.TemporaryDirectory() as tmp_venv:
                     os.chmod(dest, stat.S_IWRITE)
                     os.remove(dest)
             shutil.copy2(src, dest)
+finally:
+    # 5. Clean up the build venv without letting lock/read-only errors
+    #    mask an otherwise successful vendoring run
+    cleanup_build_dir(tmp_venv)
 """
 
     try:
