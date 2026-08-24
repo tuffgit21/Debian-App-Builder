@@ -59,7 +59,25 @@ try:
 
     ignored = {{"__pycache__", "pip", "pkg_resources", "setuptools", "_distutils_hack", "wheel"}}
 
-    # 4. Copy files safely
+    # 4. Reset the vendor directory so stale files from previous
+    #    runs can never shadow the freshly installed versions
+    for entry in os.listdir(vendor_dir):
+        victim = os.path.join(vendor_dir, entry)
+        if os.path.isdir(victim):
+            shutil.rmtree(victim, ignore_errors=True)
+            if os.path.exists(victim):
+                try:
+                    shutil.rmtree(victim, onerror=remove_readonly)
+                except OSError:
+                    pass
+        else:
+            try:
+                os.remove(victim)
+            except PermissionError:
+                os.chmod(victim, stat.S_IWRITE)
+                os.remove(victim)
+
+    # 5. Copy files safely
     for item in os.listdir(site_packages):
         top_level = item.split("-")[0].lower()
         if top_level in ignored or item.endswith(".pth"):
@@ -78,7 +96,7 @@ try:
                     os.remove(dest)
             shutil.copy2(src, dest)
 finally:
-    # 5. Clean up the build venv without letting lock/read-only errors
+    # 6. Clean up the build venv without letting lock/read-only errors
     #    mask an otherwise successful vendoring run
     cleanup_build_dir(tmp_venv)
 """
