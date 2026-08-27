@@ -104,14 +104,14 @@ def writefiles(package_root, package_name, package_version=""):
 
     select_button = ctk.CTkButton(
         file_frame,
-        text="Choose File (.py/.c) or Folder",
+        text="Choose File or Folder",
         command=choose_python_file,
     )
     select_button.pack(fill="x", padx=16, pady=(4, 6))
 
     vendor_button = ctk.CTkButton(
         file_frame,
-        text="Vendor Dependencies (pip3)",
+        text="Vendor Dependencies (pip3) - Optional",
         command=vendor_pkgs,
         fg_color="#1f538d",
     )
