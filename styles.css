@@ -222,8 +222,8 @@ main {
     justify-content: center;
     padding: 24px;
     background: rgba(6, 9, 20, 0.85);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(none);
+    -webkit-backdrop-filter: blur(none);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -252,8 +252,8 @@ main {
     justify-content: center;
     padding: 24px;
     background: rgba(6, 9, 20, 0.85);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(none);
+    -webkit-backdrop-filter: blur(none);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
