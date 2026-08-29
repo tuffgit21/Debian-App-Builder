@@ -17,7 +17,7 @@ ICON_CANDIDATES = [
 ICON_PATH = next((p for p in ICON_CANDIDATES if p.exists()), ICON_CANDIDATES[0])
 if platform.system() == "Windows":
     WINDOW_ICON_PATH = ICON_PATH.with_suffix(".ico")
-print('''THIS PROJECT IS OPEN-SOURCE, YOU CAN MODIFY, DISTRIBUTE AND USE IT FREELY.\nHowever you must credit the original author and the project repository if you use it in your own project.\nSincerely Tuffgit21 site:https://tuffgit21.github.io/\nGithub repository:https://github.com/tuffgit21/Debian-App-Builder/ 
+print('''THIS PROJECT IS OPEN-SOURCE, YOU CAN MODIFY, DISTRIBUTE AND USE IT FREELY.\nHowever you must credit the original author and the project repository if you use it in your own project.\nSincerely Tuffgit21\nsite:https://tuffgit21.github.io/\nGithub repository:https://github.com/tuffgit21/Debian-App-Builder/ 
     ''')
 
 def get_build_environment():
