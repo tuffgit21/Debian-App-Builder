@@ -101,10 +101,24 @@ finally:
     cleanup_build_dir(tmp_venv)
 """
 
+    if getattr(sys, "frozen", False):
+        python_exe = shutil.which("python") or shutil.which("python3")
+    else:
+        python_exe = sys.executable
+
+    if not python_exe:
+        messagebox.showerror(
+            "Debian App Builder",
+            "Vendoring dependencies requires a Python interpreter (python or python3) "
+            "to be available on your PATH.\nIt cannot run from the bundled executable alone.",
+        )
+        return ""
+
     try:
-        # Run the vendoring routine in a completely detached Python process
+        # Run the vendoring routine in a separate Python process so the active
+        # GUI is never re-launched (sys.executable is the .exe when frozen).
         result = subprocess.run(
-            [sys.executable, "-c", worker_script],
+            [python_exe, "-c", worker_script],
             capture_output=True,
             text=True
         )
@@ -303,14 +317,17 @@ def write_desktop_file(
 
         # Case 2: User specified default icon or left field empty
         else:
-            icon_source = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "__pycache__",
-                DEFAULT_ICON_NAME,
+            source_dir = os.path.dirname(os.path.abspath(__file__))
+            icon_source_candidates = [
+                os.path.join(source_dir, DEFAULT_ICON_NAME),
+                os.path.join(os.path.dirname(source_dir), "DebAppBuilderLogo.png"),
+            ]
+            icon_source = next(
+                (p for p in icon_source_candidates if os.path.isfile(p)), None
             )
-            if os.path.isfile(icon_source):
+            if icon_source:
                 shutil.copyfile(icon_source, default_icon_dest)
-            
+
             final_icon_value = DEFAULT_ICON_NAME
 
         # Write .desktop entry
