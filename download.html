@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thank you for downloading Debian App Builder</title>
+    <meta
+      name="description"
+      content="Thank you for downloading Debian App Builder."
+    />
+    <meta
+      property="og:title"
+      content="Thank you for downloading Debian App Builder"
+    />
+    <meta
+      property="og:description"
+      content="Redirecting to the latest Debian App Builder release."
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .download-page {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        padding: 32px 20px;
+      }
+      .download-card {
+        max-width: 720px;
+        margin: 0;
+        opacity: 1;
+        transform: none;
+        position: relative;
+        overflow: hidden;
+        padding: 48px 34px;
+      }
+      .download-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      }
+      .download-logo {
+        width: 84px;
+        height: 84px;
+        object-fit: cover;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        box-shadow: var(--glow);
+        animation: download-pop 0.7s ease both;
+      }
+      .download-kicker {
+        color: var(--accent-2);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin: 24px 0 12px;
+      }
+      .download-card h1 {
+        margin: 0;
+      }
+      .download-card p {
+        color: var(--muted);
+        font-size: 1.1rem;
+      }
+      .download-status {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 9px;
+        font-size: 0.95rem !important;
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #64f5a2;
+        box-shadow: 0 0 14px #64f5a2;
+      }
+      .progress-track {
+        height: 5px;
+        margin: 28px auto 18px;
+        max-width: 440px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .progress-bar {
+        width: 0;
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        transition: width 1s linear;
+      }
+      .release-link {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 13px 22px;
+        border-radius: 999px;
+        color: #fff !important;
+        text-decoration: none;
+        font-weight: 700;
+        background: linear-gradient(120deg, var(--accent), var(--accent-2));
+        box-shadow: var(--glow);
+        transition: transform 0.2s ease;
+      }
+      .release-link:hover {
+        transform: translateY(-3px);
+      }
+      .download-card a {
+        color: var(--accent-2);
+      }
+      @keyframes download-pop {
+        from {
+          opacity: 0;
+          transform: scale(0.8);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      @media (max-width: 520px) {
+        .download-card {
+          padding: 38px 22px;
+        }
+        .download-card h1 {
+          font-size: 2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div aria-hidden="true" class="bg-orbs">
+      <span class="orb orb-1"></span><span class="orb orb-2"></span
+      ><span class="orb orb-3"></span>
+    </div>
+    <main class="download-page">
+      <section class="download-card card" aria-labelledby="download-title">
+        <img
+          class="download-logo"
+          src="DebAppBuilderLogo.png"
+          alt="Debian App Builder logo"
+        />
+        <div class="download-kicker">Download ready</div>
+        <h1 id="download-title">
+          Thank you for downloading Debian App Builder.
+        </h1>
+        <p class="download-status">
+          <span class="status-dot"></span>Preparing the latest release
+        </p>
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <p id="countdown">Redirecting in 5 seconds...</p>
+        <p>
+          If you are not redirected automatically,
+          <a
+            class="release-link"
+            href="https://github.com/tuffgit21/Debian-App-Builder/releases/"
+            >open the release page</a
+          >.
+        </p>
+      </section>
+    </main>
+    <script>
+      const releaseUrl =
+        "https://github.com/tuffgit21/Debian-App-Builder/releases/";
+      let seconds = 5;
+      const countdown = document.getElementById("countdown");
+      const progressBar = document.getElementById("progress-bar");
+      const timer = setInterval(() => {
+        seconds -= 1;
+        progressBar.style.width = `${(5 - seconds) * 20}%`;
+        countdown.textContent = `Redirecting in ${seconds} second${seconds === 1 ? "" : "s"}...`;
+        if (seconds === 0) {
+          clearInterval(timer);
+          window.location.href = releaseUrl;
+        }
+      }, 1000);
+    </script>
+  </body>
+</html>
