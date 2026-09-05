@@ -5,7 +5,17 @@ Debian App Builder is a graphical tool for creating Debian (`.deb`) packages fro
 Package a project in a few guided steps, then build an installable Debian package without hand-writing the package tree.
 
 <p align="center">
-	<img width="136" height="136" alt="Debian App Builder logo" src="https://github.com/user-attachments/assets/f523ef17-f06f-4175-b947-4f0c53371780" />
+	<img width="136" height="136" alt="Debian App Builder logo" src="./DebAppBuilderLogo.png" />
+</p>
+
+## Screenshots
+
+<p align="center">
+	<img width="260" alt="Debian App Builder screenshot 1" src="images/DebAppBuilder-screenshot1.png" />
+	<img width="260" alt="Debian App Builder screenshot 2" src="images/DebAppBuilder-screenshot2.png" />
+	<img width="260" alt="Debian App Builder screenshot 3" src="images/DebAppBuilder-screenshot3.png" />
+	<img width="260" alt="Debian App Builder screenshot 4" src="images/DebAppBuilder-screenshot4.png" />
+	<img width="260" alt="Debian App Builder screenshot 5" src="images/DebAppBuilder-screenshot5.png" />
 </p>
 
 ## Features
@@ -74,6 +84,8 @@ Debian-App-Builder/
 │   ├── DebAppBuilder.py   # GUI entry point
 │   └── core.py            # Package generation and dependency vendoring
 ├── DebAppBuilderLogo.png
+├── images/                 # README screenshots and SVG logo
+│   └── DebAppBuilderLogo.svg
 └── README.md
 ```
 
