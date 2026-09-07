@@ -1,4 +1,5 @@
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -203,19 +204,34 @@ def choose_and_copy(destination_dir):
 
 
 def create_deb_structure(package_name, version, arch="amd64"):
-    root = f"{package_name}_{version}_{arch}"
+    package_name = package_name.strip()
+    version = version.strip()
+    arch = arch.strip()
+
+    if not package_name or not version or not arch:
+        raise ValueError("Package name, version, and architecture are required.")
+    if not re.fullmatch(r"[a-z0-9][a-z0-9+.-]*", package_name):
+        raise ValueError(
+            "Package name must use lowercase letters, numbers, '.', '+', or '-'."
+        )
+    if any(char in version or char in arch for char in ("/", "\\")):
+        raise ValueError("Version and architecture cannot contain path separators.")
+
+    root = os.path.abspath(f"{package_name}_{version}_{arch}")
+    if os.path.exists(root) and not os.path.isdir(root):
+        raise NotADirectoryError(f"A file already exists at the structure path: {root}")
     updating = os.path.isdir(root)
 
     dirs = [
-        f"{root}/DEBIAN",
-        f"{root}/usr/bin",
-        f"{root}/usr/share/applications",
-        f"{root}/usr/share/{package_name}",
+        os.path.join(root, "DEBIAN"),
+        os.path.join(root, "usr", "bin"),
+        os.path.join(root, "usr", "share", "applications"),
+        os.path.join(root, "usr", "share", package_name),
     ]
 
     for d in dirs:
         os.makedirs(d, exist_ok=True)
-    file_path = os.path.dirname(os.path.abspath(root))
+    file_path = os.path.dirname(root)
     if updating:
         messagebox.showinfo(
             "Debian App Builder",

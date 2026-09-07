@@ -618,7 +618,15 @@ def build_structure():
         )
         return
 
-    package_root = create_deb_structure(package_name, version, arch="amd64")
+    try:
+        package_root = create_deb_structure(package_name, version, arch="amd64")
+    except (OSError, ValueError) as error:
+        messagebox.showerror(
+            "Debian App Builder",
+            f"Could not create the package structure:\n{error}",
+        )
+        return
+
     root.destroy()
     writefiles(package_root, package_name, version)
 
