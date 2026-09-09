@@ -1,6 +1,7 @@
 <p align="center">
 	<img width="136" height="136" alt="Debian App Builder logo" src="./DebAppBuilderLogo.png" />
 </p>
+<br>
 [![Website](https://img.shields.io/badge/site-tuffgit21.github.io-blue?style=for-the-badge)](https://tuffgit21.github.io/Debian-App-Builder/)
 [![Status](https://img.shields.io/badge/status-live-success?style=for-the-badge)](https://tuffgit21.github.io/Debian-App-Builder/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE.txt)
