@@ -1,12 +1,18 @@
-# Debian App Builder
-
-Debian App Builder is a graphical tool for creating Debian (`.deb`) packages from Python applications, C programs, images, or application folders. It creates the package layout, `control` metadata, launcher script, and desktop entry for you.
-
-Package a project in a few guided steps, then build an installable Debian package without hand-writing the package tree.
 
 <p align="center">
 	<img width="136" height="136" alt="Debian App Builder logo" src="./DebAppBuilderLogo.png" />
 </p>
+<h2 align="center"> Debian App Builder</h2>
+
+[![Website](https://img.shields.io/badge/site-tuffgit21.github.io-blue?style=for-the-badge)](https://tuffgit21.github.io/Debian-App-Builder/)
+[![Status](https://img.shields.io/badge/status-live-success?style=for-the-badge)](https://tuffgit21.github.io/Debian-App-Builder/)
+[![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE.txt)
+<br>
+Debian App Builder is a graphical tool for creating Debian (`.deb`) packages from Python applications, C programs, images, or application folders. It creates the package layout, `control` metadata, launcher script, and desktop entry for you.
+
+Package a project in a few guided steps, then build an installable Debian package without hand-writing the package tree.
+
+
 
 ## Screenshots
 
