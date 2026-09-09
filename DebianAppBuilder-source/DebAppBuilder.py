@@ -1,10 +1,12 @@
 import os
+import sys
 import platform
 import shutil
 import subprocess
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox
+sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 import customtkinter as ctk
 import core as c
 from core import create_deb_structure
