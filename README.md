@@ -5,7 +5,7 @@
 <p align="center">
 	<img width="136" height="136" alt="Debian App Builder logo" src="./DebAppBuilderLogo.png" />
 </p>
-<p align="center"><h1> Debian App Builder</h1>
+<p align="center"><h2> Debian App Builder</h2>
 </p>
 Debian App Builder is a graphical tool for creating Debian (`.deb`) packages from Python applications, C programs, images, or application folders. It creates the package layout, `control` metadata, launcher script, and desktop entry for you.
 
