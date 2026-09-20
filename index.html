@@ -4,47 +4,65 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Debian App Builder</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
 <link href="styles.css" rel="stylesheet"/>
 </head>
 <body>
+<header class="hdiv">
+<a class="hp" href="#top"><img src="./DebAppBuilderLogo.svg" alt="Debian App Builder" style="width:38px; height:38px; vertical-align:middle; border-radius:7px; margin-right:8px; border:1px solid var(--border)">Debian App Builder</a>
+<button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-navigation">
+<span class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+<span class="sr-only">Toggle navigation</span>
+</button>
+<nav class="hnav" id="main-navigation">
+<a class="hbutton" href="#about"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info preview-icon"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>About</a>
+<a class="hbutton" href="#features"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list preview-icon"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>Features</a>
+<a class="hbutton" href="#screenshots"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Screenshots</a>
+<a class="hbutton" href="#downloads"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Downloads</a>
+<a class="hbutton" href="#contact"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Contact</a>
+</nav>
+</header>
 <div aria-hidden="true" class="bg-orbs">
 <span class="orb orb-1"></span>
 <span class="orb orb-2"></span>
 <span class="orb orb-3"></span>
 </div>
-<header class="hero">
-<div class="hero-inner">
-<img alt="DebAppBuilderLogo" class="logo" src="DebAppBuilderLogo.png"/>
-<h1>Debian App Builder</h1>
-<p class="tagline">Craft beautiful <span class="accent">.deb</span> packages like never before.</p>
-<nav>
-<a href="#about">About</a>
-<a href="#features">Features</a>
-<a href="#downloads">Downloads</a>
-<a href="#contact">Contact</a>
-</nav>
-<a class="cta" href="#downloads">⬇ Get the Builder</a>
+<main class="main-content" id="top">
+<section class="intro" id="about" aria-labelledby="about-title">
+<p class="eyebrow">DEBIAN APP BUILDER — v3.0 • WSL & Debian</p>
+<h1 id="about-title">Craft beautiful <span style="color:var(--accent)">.deb</span> packages in one click.</h1>
+<p class="intro-text">Turn a Python app, C source, image or folder into an installable Debian package. No hand-written <code>DEBIAN/control</code> — just fill, click Build.</p>
+<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px">
+<span style="font-size:.75rem; border:1px solid var(--border); padding:4px 10px; border-radius:999px; background:var(--card)">⚡ One-click <code>dpkg-deb</code></span>
+<span style="font-size:.75rem; border:1px solid var(--border); padding:4px 10px; border-radius:999px; background:var(--card)">🖥️ WSL + Debian/Ubuntu</span>
+<span style="font-size:.75rem; border:1px solid var(--border); padding:4px 10px; border-radius:999px; background:var(--card)">📦 822K .deb</span>
 </div>
-</header>
-<main>
-<section class="card reveal" id="about">
-<div class="card-icon">🚀</div>
-<h2>About</h2>
-<p>Make <strong>.deb</strong> apps with ease like never before! A streamlined pipeline that turns your project into an installable Debian package in a single press.</p>
 </section>
 <section class="card reveal" id="features">
-<h2>Features</h2>
+<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+<h2 style="margin:0">Features</h2>
+<span class="badge v3">LATEST v3.0</span>
+<a href="https://github.com/tuffgit21/Debian-App-Builder/releases/tag/DebianAppBuilder-v3.0" target="_blank" rel="noopener" style="font-size:.8rem; color:var(--accent); text-decoration:none; border:1px solid var(--border); padding:3px 8px; border-radius:999px; background:var(--card)">View release →</a>
+</div>
+<p class="muted" style="font-size:.85rem; margin:6px 0 0">12 features from <code>DebianAppBuilder-v3.0</code> — 3 new in v3.0</p>
 <ul class="feature-grid">
-<li><span class="dot"></span>Generates the complete package structure</li>
-<li><span class="dot"></span>Adds your application files automatically</li>
-<li><span class="dot"></span>Builds a proper <code>.desktop</code></li>
-<li><span class="dot"></span>Creates a bin launcher<code>.py</code></li>
-<li><span class="dot"></span>Bundles vendor dependencies (Python too)</li>
-<li><span class="dot"></span>One button builds your <code>.deb</code></li>
+<li><span class="dot"></span><span>Creates <code>DEBIAN</code>, <code>usr/bin</code>, <code>usr/share</code> layout</span></li>
+<li><span class="dot"></span><span>Select Python, C source, image, or app folder</span></li>
+<li><span class="dot"></span><span>Compiles C with <code>gcc</code></span></li>
+<li><span class="dot"></span><span>Metadata: name, version, arch, depends, maintainer</span></li>
+<li><span class="dot"></span><span>Builds <code>.desktop</code> <em>Categories / Terminal / Path</em></span></li>
+<li><span class="dot"></span><span>Vendors Python deps into package</span></li>
+<li><span class="dot"></span><span>Hicolor <code>16→256</code> + scalable <span class="badge new">new</span></span></li>
+<li><span class="dot"></span><span>AppStream <code>metainfo.xml</code> for Software Center <span class="badge new">new</span></span></li>
+<li><span class="dot"></span><span>Session <code>.json</code> persistence <span class="badge new">new</span></span></li>
+<li><span class="dot"></span><span>High-DPI icon &amp; readonly handling</span></li>
+<li><span class="dot"></span><span>Output dir + <code>dpkg-deb</code> build</span></li>
+<li><span class="dot"></span><span>One-click Build tab</span></li>
 </ul>
+<p style="margin:12px 0 0; font-size:.8rem; color:var(--muted)"><a href="https://github.com/tuffgit21/Debian-App-Builder/blob/main/README.md#features" target="_blank" rel="noopener">README</a> · <a href="https://github.com/tuffgit21/Debian-App-Builder/releases" target="_blank" rel="noopener">All releases</a></p>
 </section>
 <section class="card reveal" id="screenshots">
 <div class="card-icon">📷 </div>
@@ -73,17 +91,27 @@
 </div>
 </section>
 <section class="card reveal" id="downloads">
-<h2>Downloads</h2>
-<p>Grab the latest release and start packaging.</p>
-<a class="btn primary" href="./download.html">Latest Release →</a>
+<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap"><h2 style="margin:0">Downloads</h2><span class="badge" style="background:var(--accent); color:#fff; padding:3px 9px; border-radius:999px; font-size:.7em">v3.0 • 18 Sep 2026</span></div>
+<p style="margin-top:8px">Grab the latest <code>.deb</code> or add the APT repo. No build needed.</p>
+<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:12px">
+<a class="btn primary" href="https://tuffgit21.github.io/tuffgit21-APT-repo/pool/main/d/debappbuilder/debian-app-builder_3.0_amd64.deb" download>⬇ Direct .deb — 822.7K</a>
+<a class="btn" href="./download.html" style="background:var(--card); color:var(--text); border:1px solid var(--border)">All releases →</a>
+</div>
+<details style="margin-top:12px; border:1px solid var(--border); border-radius:10px; padding:10px 12px; background:rgba(255,255,255,.03); max-width:100%; overflow:hidden; box-sizing:border-box">
+<summary style="cursor:pointer; font-size:.85rem; font-weight:600">APT repo (recommended)</summary>
+<pre style="margin:8px 0 0; background:#0f0f0f; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:.70rem; line-height:1.5; overflow-x:auto; overflow-y:hidden; max-width:100%; box-sizing:border-box; white-space:pre-wrap; word-break:break-all; overflow-wrap:anywhere"><code style="white-space:pre-wrap; word-break:break-all; overflow-wrap:anywhere">echo "deb [trusted=yes] https://tuffgit21.github.io/tuffgit21-APT-repo stable main" | sudo tee /etc/apt/sources.list.d/tuffgit21.list
+sudo apt update && sudo apt install debian-app-builder</code></pre>
+</details>
+<p style="margin:10px 0 0; font-size:.8rem; color:var(--muted)">Requires <code>customtkinter</code> + <code>python3-tk</code> + <code>dpkg-dev</code> on Debian/WSL.</p>
 </section>
 <section class="card reveal" id="contact">
 <h2>Contact</h2>
-<p>Ready to create something great? Get in touch and start your project today.</p>
+<p>Questions, ideas, or a bug? I read every message — usually replies within a day.</p>
 <div class="actions">
-<button class="btn primary glow" id="get-started"><a href="https://forms.gle/stxDfYXyTWA26EL48" target="_blank">✅ Get Started</a></button>
-<button class="btn glow" id="open-social" type="button">🌐 Connect</button>
+<a class="btn primary" href="https://forms.gle/stxDfYXyTWA26EL48" target="_blank" style="text-decoration:none; color:#fff">✅ Get Started — Form</a>
+<button class="btn" id="open-social" type="button" style="background:var(--card); color:var(--text); border:1px solid var(--border)">🌐 Connect — GitHub / Discord</button>
 </div>
+<p style="margin:10px 0 0; font-size:.8rem; color:var(--muted)">Or open an <a href="https://github.com/tuffgit21/Debian-App-Builder/issues" target="_blank" rel="noopener">Issue on GitHub</a>.</p>
 </section>
 </main>
 <footer>
@@ -154,13 +182,19 @@
         sp.addEventListener('click', e => { if (e.target === sp) closeSp(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSp(); });
 
-        // Screenshot gallery scroll controls (reusable template)
-        document.querySelectorAll('.gallery').forEach(g => {
-            const track = g.querySelector('.screenshots');
-            const step = () => track.querySelector('.shot')?.offsetWidth + 20 || 300;
-            g.querySelector('.gallery-btn.prev')?.addEventListener('click', () => track.scrollBy({ left: -step(), behavior: 'smooth' }));
-            g.querySelector('.gallery-btn.next')?.addEventListener('click', () => track.scrollBy({ left: step(), behavior: 'smooth' }));
-        });
+        // PyShell-like hdiv toggle (small header with icon)
+        const toggle = document.querySelector('.menu-toggle');
+        const nav = document.getElementById('main-navigation');
+        if(toggle && nav){
+            toggle.addEventListener('click', ()=>{
+                const open = nav.classList.toggle('is-open');
+                toggle.setAttribute('aria-expanded', open);
+            });
+            nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
+                setTimeout(()=>{ nav.classList.remove('is-open'); toggle.setAttribute('aria-expanded','false'); }, 120);
+            }));
+            document.addEventListener('keydown', e=>{ if(e.key==='Escape' && nav.classList.contains('is-open')){ nav.classList.remove('is-open'); toggle.setAttribute('aria-expanded','false'); }});
+        }
     </script>
 </body>
 </html>
