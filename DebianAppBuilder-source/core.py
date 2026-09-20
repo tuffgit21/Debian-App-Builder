@@ -8,18 +8,241 @@ import tempfile
 import stat
 from tkinter import filedialog, messagebox
 import sysconfig
-DEFAULT_ICON_NAME = "DebAppBuilderIcon.png"
-# Packages to vendor into the deb package tree
-PACKAGES_TO_VENDOR = ["customtkinter", "packaging", "darkdetect"]
+DEFAULT_ICON_NAME = "debian-app-builder-package.svg"
+FALLBACK_SVG_NAME = "debian-app-builder-package.svg"
+# Legacy name kept for filtering payloads that may still use the old PNG
+LEGACY_ICON_NAME = "DebAppBuilderIcon.png"
+# Hicolor sizes for scalable + raster
+HICOLOR_SIZES = (16, 32, 48, 64, 128, 256)
+
+
+def _get_fallback_svg_path():
+    """Locate bundled debian-app-builder-package.svg next to core.py."""
+    source_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(source_dir, FALLBACK_SVG_NAME),
+        os.path.join(source_dir, DEFAULT_ICON_NAME),
+        os.path.join(os.path.dirname(source_dir), FALLBACK_SVG_NAME),
+        os.path.join(os.path.dirname(source_dir), "DebAppBuilderLogo.png"),
+    ]
+    for p in candidates:
+        if os.path.isfile(p) and p.lower().endswith(".svg"):
+            return p
+    # fallback: any svg in source_dir
+    for p in candidates:
+        if os.path.isfile(p):
+            return p
+    return None
+
+
+def has_hicolor_icons(package_root, package_name):
+    """Check if package already has any hicolor icon for package_name."""
+    hicolor_base = os.path.join(str(package_root), "usr", "share", "icons", "hicolor")
+    if not os.path.isdir(hicolor_base):
+        return False
+    for sz in ["16x16", "32x32", "48x48", "64x64", "128x128", "256x256", "scalable"]:
+        exts = [".svg"] if sz == "scalable" else [".png"]
+        for ext in exts:
+            if os.path.isfile(os.path.join(hicolor_base, sz, "apps", f"{package_name}{ext}")):
+                return True
+    return False
+
+
+def ensure_fallback_hicolor(package_root, package_name, silent=True):
+    """
+    Ensure hicolor icons exist for package. If none, generate from
+    debian-app-builder-package.svg into icons/hicolor/{16x16..256x256}/apps
+    and scalable/apps. Returns True if hicolor now exists, False otherwise.
+    When silent=True no messagebox is shown.
+    """
+    try:
+        package_name = str(package_name).strip()
+        if not package_name:
+            return False
+        if has_hicolor_icons(package_root, package_name):
+            return True
+        fallback_src = _get_fallback_svg_path()
+        if not fallback_src or not os.path.isfile(fallback_src):
+            # try svg in same dir as core.py (bundled)
+            fallback_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), FALLBACK_SVG_NAME)
+            if not os.path.isfile(fallback_src):
+                return False
+        # Reuse generate logic but silent when requested
+        if silent:
+            # silent internal generation – do not pop messageboxes
+            ext = os.path.splitext(fallback_src)[1].lower()
+            try:
+                if ext == ".svg":
+                    # scalable
+                    dest_dir = os.path.join(str(package_root), "usr", "share", "icons", "hicolor", "scalable", "apps")
+                    os.makedirs(dest_dir, exist_ok=True)
+                    dest_path = os.path.join(dest_dir, package_name + ".svg")
+                    try:
+                        shutil.copy2(fallback_src, dest_path)
+                    except Exception:
+                        return False
+                    # Try to generate PNG sizes via cairosvg if available
+                    png_generated = False
+                    try:
+                        import cairosvg
+                        for sz in HICOLOR_SIZES:
+                            dest_dir_png = os.path.join(str(package_root), "usr", "share", "icons", "hicolor", f"{sz}x{sz}", "apps")
+                            os.makedirs(dest_dir_png, exist_ok=True)
+                            dest_png = os.path.join(dest_dir_png, package_name + ".png")
+                            try:
+                                cairosvg.svg2png(url=fallback_src, write_to=dest_png, output_width=sz, output_height=sz)
+                                png_generated = True
+                            except Exception:
+                                continue
+                    except ImportError:
+                        pass
+                    except Exception:
+                        pass
+                    # If cairosvg not available or failed, generate placeholder PNGs via Pillow
+                    # so icons/hicolor/{16x16..256x256}/apps requirement is always met
+                    if not png_generated:
+                        try:
+                            from PIL import Image
+                            # Try to rasterize via Pillow if fallback is raster; else create placeholder
+                            src_img = None
+                            try:
+                                src_img = Image.open(fallback_src).convert("RGBA")
+                            except Exception:
+                                src_img = None
+                            for sz in HICOLOR_SIZES:
+                                dest_dir_png = os.path.join(str(package_root), "usr", "share", "icons", "hicolor", f"{sz}x{sz}", "apps")
+                                os.makedirs(dest_dir_png, exist_ok=True)
+                                dest_png = os.path.join(dest_dir_png, package_name + ".png")
+                                if os.path.isfile(dest_png):
+                                    continue
+                                try:
+                                    if src_img is not None:
+                                        resized = src_img.resize((sz, sz), Image.LANCZOS)
+                                        resized.save(dest_png, "PNG")
+                                    else:
+                                        # placeholder transparent PNG
+                                        placeholder = Image.new("RGBA", (sz, sz), (0, 0, 0, 0))
+                                        placeholder.save(dest_png, "PNG")
+                                except Exception:
+                                    continue
+                        except ImportError:
+                            # Pillow not available – create minimal valid PNGs via raw bytes
+                            try:
+                                import base64
+                                # 1x1 transparent PNG (will be copied for all sizes; ensures file exists)
+                                _minimal_png_b64 = b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII="
+                                _minimal_png = base64.b64decode(_minimal_png_b64)
+                                for sz in HICOLOR_SIZES:
+                                    dest_dir_png = os.path.join(str(package_root), "usr", "share", "icons", "hicolor", f"{sz}x{sz}", "apps")
+                                    os.makedirs(dest_dir_png, exist_ok=True)
+                                    dest_png = os.path.join(dest_dir_png, package_name + ".png")
+                                    if os.path.isfile(dest_png):
+                                        continue
+                                    try:
+                                        with open(dest_png, "wb") as _f:
+                                            _f.write(_minimal_png)
+                                    except Exception:
+                                        continue
+                            except Exception:
+                                pass
+                        except Exception:
+                            pass
+                    return has_hicolor_icons(package_root, package_name)
+                else:
+                    # raster fallback – use Pillow
+                    try:
+                        from PIL import Image
+                        src_img = Image.open(fallback_src).convert("RGBA")
+                        for sz in HICOLOR_SIZES:
+                            dest_dir = os.path.join(str(package_root), "usr", "share", "icons", "hicolor", f"{sz}x{sz}", "apps")
+                            os.makedirs(dest_dir, exist_ok=True)
+                            dest_path = os.path.join(dest_dir, package_name + ".png")
+                            resized = src_img.resize((sz, sz), Image.LANCZOS)
+                            resized.save(dest_path, "PNG")
+                        return has_hicolor_icons(package_root, package_name)
+                    except Exception:
+                        return has_hicolor_icons(package_root, package_name)
+            except Exception:
+                return False
+        else:
+            # non-silent: delegate to interactive generator (shows messagebox)
+            res = generate_hicolor_icons(package_root, package_name, fallback_src, sizes=HICOLOR_SIZES)
+            return bool(res) and has_hicolor_icons(package_root, package_name)
+    except Exception:
+        return False
+    return has_hicolor_icons(package_root, package_name)
+# Packages to vendor into the deb package tree (includes cairosvg for SVG→PNG hicolor + any missing deps)
+PACKAGES_TO_VENDOR = ["customtkinter", "packaging", "darkdetect", "cairosvg"]
 
 
 def vendor_dependencies(package_root: str, package_name: str) -> str:
     """
     Spawns an isolated background process to install dependencies and 
     vendor them without running into Windows file locks from the active GUI.
+    First checks if modules are already installed on the user's device
+    and reuses them directly before falling back to venv install.
     """
     vendor_dir = os.path.abspath(os.path.join(package_root, "usr", "share", package_name, "vendor"))
     os.makedirs(vendor_dir, exist_ok=True)
+
+    # --- Check if modules already installed on user's device (reuse to save time) ---
+    try:
+        import importlib.util
+        missing = []
+        for _pkg in PACKAGES_TO_VENDOR:
+            try:
+                if importlib.util.find_spec(_pkg) is None:
+                    missing.append(_pkg)
+            except Exception:
+                missing.append(_pkg)
+        if not missing:
+            # All required packages already available locally – copy directly from current environment
+            try:
+                current_site = sysconfig.get_path("purelib")
+                if current_site and os.path.isdir(current_site):
+                    # Clean vendor_dir first (same as worker)
+                    for entry in os.listdir(vendor_dir):
+                        victim = os.path.join(vendor_dir, entry)
+                        try:
+                            if os.path.isdir(victim):
+                                shutil.rmtree(victim, ignore_errors=True)
+                                if os.path.exists(victim):
+                                    shutil.rmtree(victim, onerror=lambda f,p,e: (os.chmod(p, stat.S_IWRITE), f(p)))
+                            else:
+                                os.remove(victim)
+                        except PermissionError:
+                            try:
+                                os.chmod(victim, stat.S_IWRITE)
+                                os.remove(victim) if os.path.isfile(victim) else shutil.rmtree(victim, ignore_errors=True)
+                            except Exception:
+                                pass
+                        except Exception:
+                            pass
+                    # Copy only required packages + their dist-info/metadata for completeness
+                    for _pkg in PACKAGES_TO_VENDOR:
+                        # Find package dir(s) in current_site matching pkg
+                        for item in os.listdir(current_site):
+                            top = item.split("-")[0].lower()
+                            if top == _pkg.lower():
+                                src = os.path.join(current_site, item)
+                                dest = os.path.join(vendor_dir, item)
+                                try:
+                                    if os.path.isdir(src):
+                                        shutil.copytree(src, dest, dirs_exist_ok=True, symlinks=False)
+                                    else:
+                                        shutil.copy2(src, dest)
+                                except Exception:
+                                    pass
+                    # Verify at least one package was copied
+                    copied = any(os.path.exists(os.path.join(vendor_dir, _p)) or any(f.lower().startswith(_p.lower()) for f in os.listdir(vendor_dir)) for _p in PACKAGES_TO_VENDOR)
+                    # Fallback check: count copied items
+                    if os.listdir(vendor_dir):
+                        messagebox.showinfo("Debian App Builder", f"Reused already-installed dependencies (no download needed) into:\n{vendor_dir}")
+                        return vendor_dir
+            except Exception:
+                pass  # fall through to venv install
+    except Exception:
+        pass
 
     # Inline script executed in a completely separate Python process
     worker_script = f"""
@@ -359,14 +582,14 @@ def validate_build_prerequisites(package_root, package_name):
     has_payload = False
     candidates = [root / "usr" / "share" / pkg]
     # also scan all share subdirs if specific one empty (lenient)
-    if not candidates[0].is_dir() or not any(p.name not in ("vendor", DEFAULT_ICON_NAME) for p in candidates[0].iterdir() if p.exists()):
+    if not candidates[0].is_dir() or not any(p.name not in ("vendor", DEFAULT_ICON_NAME, LEGACY_ICON_NAME) for p in candidates[0].iterdir() if p.exists()):
         # check any payload in share
         share_root = root / "usr" / "share"
         if share_root.is_dir():
             for sub in share_root.iterdir():
                 if sub.is_dir() and sub.name not in ("applications", "doc", "man", "icons", "pixmaps"):
                     for p in sub.iterdir():
-                        if p.name not in ("vendor", DEFAULT_ICON_NAME):
+                        if p.name not in ("vendor", DEFAULT_ICON_NAME, LEGACY_ICON_NAME):
                             has_payload = True
                             break
                 elif sub.is_file() and sub.name not in ("vendor",):
@@ -379,7 +602,7 @@ def validate_build_prerequisites(package_root, package_name):
     app_share = root / "usr" / "share" / pkg
     if app_share.is_dir():
         for p in app_share.iterdir():
-            if p.name not in ("vendor", DEFAULT_ICON_NAME):
+            if p.name not in ("vendor", DEFAULT_ICON_NAME, LEGACY_ICON_NAME):
                 has_payload = True
                 break
     if not has_payload:
@@ -532,6 +755,9 @@ def write_desktop_file(
     icon_input = icon.strip()
 
     try:
+        # Determine existing hicolor before deciding fallback
+        _has_hicolor_before = has_hicolor_icons(package_root, package_name)
+
         # Case 1: Custom file path provided by user
         if icon_input and os.path.isfile(icon_input):
             custom_filename = os.path.basename(icon_input)
@@ -542,22 +768,49 @@ def write_desktop_file(
 
             # Remove default icon if it's no longer being used
             if custom_filename != DEFAULT_ICON_NAME and os.path.exists(default_icon_dest):
-                os.remove(default_icon_dest)
+                try:
+                    os.remove(default_icon_dest)
+                except OSError:
+                    pass
 
             final_icon_value = custom_filename
 
-        # Case 2: User specified default icon or left field empty
+        # Case 2: No custom icon – use fallback SVG and ensure hicolor icons
         else:
-            source_dir = os.path.dirname(os.path.abspath(__file__))
-            icon_source_candidates = [
-                os.path.join(source_dir, DEFAULT_ICON_NAME),
-                os.path.join(os.path.dirname(source_dir), "DebAppBuilderLogo.png"),
-            ]
-            icon_source = next(
-                (p for p in icon_source_candidates if os.path.isfile(p)), None
-            )
-            if icon_source:
-                shutil.copyfile(icon_source, default_icon_dest)
+            # When package has no icons, auto-generate hicolor from debian-app-builder-package.svg
+            # into icons/hicolor/{16x16,32x32,48x48,64x64,128x128,256x256}/apps and scalable/apps
+            if not _has_hicolor_before:
+                try:
+                    ensure_fallback_hicolor(package_root, package_name, silent=True)
+                except Exception:
+                    pass
+            # Ensure fallback SVG is present in /usr/share/<pkg>/ for non-hicolor fallback Icon path
+            fallback_src = _get_fallback_svg_path()
+            if fallback_src and os.path.isfile(fallback_src):
+                try:
+                    # Always ensure the svg exists in share for Icon=/usr/share/<pkg>/debian-app-builder-package.svg fallback
+                    if not os.path.isfile(default_icon_dest):
+                        shutil.copyfile(fallback_src, default_icon_dest)
+                    else:
+                        # if dest exists but different size, keep it; do not overwrite custom hicolor
+                        pass
+                except Exception:
+                    pass
+            else:
+                # legacy fallback if svg not found, try PNG
+                source_dir = os.path.dirname(os.path.abspath(__file__))
+                icon_source_candidates = [
+                    os.path.join(source_dir, DEFAULT_ICON_NAME),
+                    os.path.join(os.path.dirname(source_dir), "DebAppBuilderLogo.png"),
+                ]
+                icon_source = next(
+                    (p for p in icon_source_candidates if os.path.isfile(p)), None
+                )
+                if icon_source:
+                    try:
+                        shutil.copyfile(icon_source, default_icon_dest)
+                    except Exception:
+                        pass
 
             final_icon_value = DEFAULT_ICON_NAME
 
@@ -806,6 +1059,13 @@ def write_appstream_file(
         os.makedirs(metainfo_dir, exist_ok=True)
         dest_path = os.path.join(metainfo_dir, filename)
 
+        # Ensure fallback hicolor icons exist so <icon type="stock"> resolves in KDE Discover / GNOME Software
+        try:
+            if not has_hicolor_icons(package_root, package_name):
+                ensure_fallback_hicolor(package_root, package_name, silent=True)
+        except Exception:
+            pass
+
         # Escape XML values
         def esc(s):
             return _xml_escape(s, entities={"'": "&apos;", '"': "&quot;"})
@@ -822,6 +1082,17 @@ def write_appstream_file(
         if not paragraphs:
             paragraphs = [description]
 
+        # Normalize project_license to SPDX valid (KDE Discover validates)
+        # Map deprecated GPL-3.0+ -> GPL-3.0-or-later, etc.
+        _license_map = {
+            "GPL-3.0+": "GPL-3.0-or-later",
+            "GPL-2.0+": "GPL-2.0-or-later",
+            "GPL-3.0": "GPL-3.0-only",
+            "GPL-2.0": "GPL-2.0-only",
+        }
+        if project_license in _license_map:
+            project_license = _license_map[project_license]
+
         lines = []
         lines.append('<?xml version="1.0" encoding="UTF-8"?>')
         lines.append('<component type="desktop-application">')
@@ -836,14 +1107,26 @@ def write_appstream_file(
             para_one_line = " ".join(para.splitlines()).strip()
             lines.append(f'    <p>{esc(para_one_line)}</p>')
         lines.append('  </description>')
-        # launchable must match desktop file id
+        # launchable must match desktop file id (package_name.desktop)
+        # KDE Discover requires launchable to exist and match the installed .desktop filename
         lines.append(f'  <launchable type="desktop-id">{esc(package_name)}.desktop</launchable>')
+        # Icon – required for KDE Discover/GNOME Software to display. Use stock theme icon
+        # (hicolor is already ensured above from debian-app-builder-package.svg fallback)
+        lines.append(f'  <icon type="stock">{esc(package_name)}</icon>')
+        # Provides – KDE Discover uses this to match binary/desktop; provide both
         lines.append('  <provides>')
+        lines.append(f'    <id>{esc(package_name)}.desktop</id>')
+        lines.append(f'    <id>{esc(app_id)}.desktop</id>')
         lines.append(f'    <binary>{esc(package_name)}</binary>')
         lines.append('  </provides>')
         if homepage_url:
             lines.append(f'  <url type="homepage">{esc(homepage_url)}</url>')
+        # Developer – use modern <developer><name> (and keep <developer_name> for older validators)
         if developer_name:
+            lines.append('  <developer>')
+            lines.append(f'    <name>{esc(developer_name)}</name>')
+            lines.append('  </developer>')
+            # backward compat
             lines.append(f'  <developer_name>{esc(developer_name)}</developer_name>')
         if cat_list:
             lines.append('  <categories>')

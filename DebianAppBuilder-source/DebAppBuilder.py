@@ -13,6 +13,35 @@ import customtkinter as ctk
 import core as c
 from core import create_deb_structure
 VERSION = "v3.0"
+
+# Fix CustomTkinter "invalid command name ...check_dpi_scaling" / "...update" after race
+# This pops every time write_files() loads because ScalingTracker / AppearanceModeTracker
+# keep an `after` loop referencing the previous Tk instance (root → app). When root is
+# destroyed the Tcl command "260295...check_dpi_scaling" is deleted but the pending
+# after still fires, raising TclError via report_callback_exception.
+# Must be installed before any CTk() is created.
+try:
+    _orig_report_cb = tk.Tk.report_callback_exception
+    def _silent_report_cb(self, exc, val, tb):
+        try:
+            msg = str(val)
+            # suppress the specific CustomTkinter tracker race – common on window switch
+            if "invalid command name" in msg and ("check_dpi_scaling" in msg or msg.strip().endswith('update"') or ".update" in msg or "update" in msg):
+                return
+            if "invalid command name" in msg:
+                # also suppress any stray "after script" invalid command after window destroy
+                low = msg.lower()
+                if "after" in low or "check_dpi" in low:
+                    return
+        except Exception:
+            pass
+        try:
+            return _orig_report_cb(self, exc, val, tb)
+        except Exception:
+            pass
+    tk.Tk.report_callback_exception = _silent_report_cb
+except Exception:
+    pass
 SCRIPT_DIR = Path(__file__).resolve().parent
 SAVE_FILE = SCRIPT_DIR / ".debappbuilder_session.json"
 
@@ -157,6 +186,25 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
     build_mode, build_command, build_system = get_build_environment()
     ctk.set_appearance_mode("system")
     app = ctk.CTk()
+    # Suppress CustomTkinter tracker TclError on this Toplevel as well
+    try:
+        _orig_app_report = app.report_callback_exception
+        def _app_silent_report(exc, val, tb):
+            try:
+                msg = str(val)
+                if "invalid command name" in msg and ("check_dpi_scaling" in msg or "update" in msg):
+                    return
+                if "invalid command name" in msg:
+                    return
+            except Exception:
+                pass
+            try:
+                return _orig_app_report(exc, val, tb)
+            except Exception:
+                pass
+        app.report_callback_exception = _app_silent_report.__get__(app, app.__class__)
+    except Exception:
+        pass
     screen_w = app.winfo_screenwidth()
     screen_h = app.winfo_screenheight()
     win_w = min(560, max(440, screen_w - 40))
@@ -265,49 +313,80 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
     metadata_frame.pack(fill="x", padx=14, pady=(0, 14))
     metadata_frame.grid_columnconfigure(1, weight=1)
 
+    # --- Binary name (source of truth for executable) ---
+    # This prevents name problems: editing the display "Name" no longer overwrites the binary.
+    # Package and Desktop Exec are automatically kept in sync with this bin name.
+    bin_name_label = ctk.CTkLabel(metadata_frame, text="Binary name:", anchor="w")
+    bin_name_label.grid(row=0, column=0, padx=(16, 10), pady=(16, 6), sticky="w")
+    bin_name = ctk.CTkEntry(metadata_frame, placeholder_text="lowercase, e.g. myapp")
+    bin_name.insert(0, package_name)
+    bin_name.grid(row=0, column=1, padx=(0, 16), pady=(16, 6), sticky="ew")
+    ctk.CTkLabel(
+        metadata_frame, text="Executable file name in /usr/bin  (lowercase, no spaces)",
+        text_color="#8b95a1", font=ctk.CTkFont(size=10), anchor="w"
+    ).grid(row=1, column=0, columnspan=2, padx=16, pady=(0, 6), sticky="w")
+
     package_label = ctk.CTkLabel(metadata_frame, text="Package:", anchor="w")
-    package_label.grid(row=0, column=0, padx=(16, 10), pady=(16, 6), sticky="w")
+    package_label.grid(row=2, column=0, padx=(16, 10), pady=6, sticky="w")
     package = ctk.CTkEntry(metadata_frame)
     package.insert(0, package_name)
-    package.grid(row=0, column=1, padx=(0, 16), pady=(16, 6), sticky="ew")
+    package.grid(row=2, column=1, padx=(0, 16), pady=6, sticky="ew")
 
     version_label = ctk.CTkLabel(metadata_frame, text="Version:", anchor="w")
-    version_label.grid(row=1, column=0, padx=(16, 10), pady=6, sticky="w")
+    version_label.grid(row=3, column=0, padx=(16, 10), pady=6, sticky="w")
     version = ctk.CTkEntry(metadata_frame)
     if package_version:
         version.insert(0, package_version)
-    version.grid(row=1, column=1, padx=(0, 16), pady=6, sticky="ew")
+    version.grid(row=3, column=1, padx=(0, 16), pady=6, sticky="ew")
 
     architecture_label = ctk.CTkLabel(metadata_frame, text="Architecture:", anchor="w")
-    architecture_label.grid(row=2, column=0, padx=(16, 10), pady=6, sticky="w")
-    architecture = ctk.CTkEntry(metadata_frame)
-    architecture.insert(0, "amd64")
-    architecture.grid(row=2, column=1, padx=(0, 16), pady=6, sticky="ew")
+    architecture_label.grid(row=4, column=0, padx=(16, 10), pady=6, sticky="w")
+    architecture = ctk.CTkEntry(metadata_frame, placeholder_text="all, amd64, i386, arm64, armhf")
+    # Prefill from initial root folder arch (…_version_arch) so root choice is preserved in WRITE MODE
+    _arch_prefill = "amd64"
+    try:
+        _base = Path(package_root).name
+        if "_" in _base:
+            _parts = _base.rsplit("_", 2)
+            # expected: name_version_arch
+            if len(_parts) == 3 and _parts[2].strip():
+                _arch_prefill = _parts[2].strip()
+            elif len(_parts) >= 2:
+                _maybe = _parts[-1].strip()
+                if _maybe and all(c.isalnum() or c in "-+." for c in _maybe):
+                    _arch_prefill = _maybe
+    except Exception:
+        pass
+    # If saved session overrides, it will be restored later; set initial now
+    architecture.insert(0, _arch_prefill)
+    architecture.grid(row=4, column=1, padx=(0, 16), pady=6, sticky="ew")
 
     depends_label = ctk.CTkLabel(metadata_frame, text="Depends:", anchor="w")
-    depends_label.grid(row=3, column=0, padx=(16, 10), pady=6, sticky="w")
+    depends_label.grid(row=5, column=0, padx=(16, 10), pady=6, sticky="w")
     depends = ctk.CTkEntry(metadata_frame)
-    depends.grid(row=3, column=1, padx=(0, 16), pady=6, sticky="ew")
+    depends.grid(row=5, column=1, padx=(0, 16), pady=6, sticky="ew")
 
     maintainer_label = ctk.CTkLabel(metadata_frame, text="Maintainer:", anchor="w")
-    maintainer_label.grid(row=4, column=0, padx=(16, 10), pady=6, sticky="w")
+    maintainer_label.grid(row=6, column=0, padx=(16, 10), pady=6, sticky="w")
     maintainer = ctk.CTkEntry(metadata_frame)
-    maintainer.grid(row=4, column=1, padx=(0, 16), pady=6, sticky="ew")
+    maintainer.grid(row=6, column=1, padx=(0, 16), pady=6, sticky="ew")
 
     description_label = ctk.CTkLabel(metadata_frame, text="Description:", anchor="w")
-    description_label.grid(row=5, column=0, padx=(16, 10), pady=(6, 16), sticky="w")
+    description_label.grid(row=7, column=0, padx=(16, 10), pady=(6, 16), sticky="w")
     description = ctk.CTkEntry(metadata_frame)
-    description.grid(row=5, column=1, padx=(0, 16), pady=(6, 16), sticky="ew")
+    description.grid(row=7, column=1, padx=(0, 16), pady=(6, 16), sticky="ew")
 
     ctk.CTkLabel(
         meta_scroll, text="Desktop Entry",
         font=ctk.CTkFont(size=13, weight="bold"),
         text_color="#c9a15a", anchor="w",
     ).pack(anchor="w", padx=18, pady=(14, 4))
-    ctk.CTkLabel(
-        meta_scroll, text=f"File: {package_name}.desktop", anchor="w",
+    desktop_file_var = ctk.StringVar(value=f"File: {package_name}.desktop")
+    desktop_file_label = ctk.CTkLabel(
+        meta_scroll, textvariable=desktop_file_var, anchor="w",
         text_color="#8b95a1",
-    ).pack(anchor="w", padx=18, pady=(0, 6))
+    )
+    desktop_file_label.pack(anchor="w", padx=18, pady=(0, 6))
     desktop_frame = ctk.CTkFrame(meta_scroll)
     desktop_frame.pack(fill="x", padx=14, pady=(0, 14))
     desktop_frame.grid_columnconfigure(1, weight=1)
@@ -346,10 +425,120 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
     desktop_path_entry = ctk.CTkEntry(desktop_frame, placeholder_text=f"/usr/share/{package_name}  (working directory, optional)")
     desktop_path_entry.grid(row=5, column=1, padx=(0, 16), pady=(6, 16), sticky="ew")
 
-    # Old Icon input removed – hicolor now provides icons (16x16..256x256, scalable)
-    desktop_icon_var = ctk.StringVar(value=f"/usr/share/{package_name}/DebAppBuilderIcon.png")
+    # Fallback icon: when package has no icons use debian-app-builder-package.svg
+    # Auto-generates icons/hicolor/{16x16,32x32,48x48,64x64,128x128,256x256}/apps + scalable/apps
+    FALLBACK_ICON_NAME = "debian-app-builder-package.svg"
+    desktop_icon_var = ctk.StringVar(value=f"/usr/share/{package_name}/{FALLBACK_ICON_NAME}")
     desktop_icon = desktop_icon_var  # keep alias for compatibility (StringVar)
     desktop_icon_button = None
+
+    # Helper: ensure fallback hicolor icons exist (16x16..256x256 + scalable) when package has no icons
+    def _ensure_fallback_hicolor_if_needed(pkg=None):
+        try:
+            _pkg = pkg or _get_effective_bin()
+            if not _pkg:
+                return False
+            if hasattr(c, "has_hicolor_icons") and c.has_hicolor_icons(package_root, _pkg):
+                return True
+            if hasattr(c, "ensure_fallback_hicolor"):
+                return c.ensure_fallback_hicolor(package_root, _pkg, silent=True)
+            # fallback: try generate directly from bundled svg
+            _src_dir = Path(__file__).resolve().parent
+            _candidates = [
+                _src_dir / FALLBACK_ICON_NAME,
+                _src_dir / "debian-app-builder-package.svg",
+                _src_dir.parent / FALLBACK_ICON_NAME,
+            ]
+            _src = next((p for p in _candidates if p.is_file()), None)
+            if _src and hasattr(c, "generate_hicolor_icons"):
+                # silent generation – temporarily suppress messagebox
+                import tkinter.messagebox as _mb
+                _orig_info = _mb.showinfo
+                _orig_err = _mb.showerror
+                try:
+                    _mb.showinfo = lambda *a, **k: None
+                    _mb.showerror = lambda *a, **k: None
+                    res = c.generate_hicolor_icons(package_root, _pkg, str(_src))
+                    return bool(res)
+                finally:
+                    _mb.showinfo = _orig_info
+                    _mb.showerror = _orig_err
+        except Exception:
+            pass
+        return False
+
+    # ---------- Bin name auto-sync (prevents display Name from overwriting executable) ----------
+    # Helper to get the canonical binary/package name (bin_name is source of truth)
+    def _get_effective_bin():
+        try:
+            b = bin_name.get().strip()
+        except Exception:
+            b = ""
+        if b:
+            return b
+        try:
+            return package.get().strip() or package_name
+        except Exception:
+            return package_name
+
+    _syncing_bin = {"active": False}
+
+    def _sync_bin_to_package_and_exec(*_args):
+        if _syncing_bin["active"]:
+            return
+        try:
+            new_bin = bin_name.get().strip()
+        except Exception:
+            return
+        if not new_bin:
+            return
+        # Validate bin name lightly (lowercase Debian style) but allow typing mid-edit
+        _syncing_bin["active"] = True
+        try:
+            # Package field mirrors bin name automatically
+            try:
+                if package.get().strip() != new_bin:
+                    package.delete(0, "end")
+                    package.insert(0, new_bin)
+            except Exception:
+                pass
+            # Desktop Exec mirrors bin name automatically
+            try:
+                if desktop_exec.get().strip() != new_bin:
+                    desktop_exec.delete(0, "end")
+                    desktop_exec.insert(0, new_bin)
+            except Exception:
+                pass
+            # Update dynamic labels
+            try:
+                desktop_file_var.set(f"File: {new_bin}.desktop")
+            except Exception:
+                pass
+            try:
+                desktop_path_entry.configure(placeholder_text=f"/usr/share/{new_bin}  (working directory, optional)")
+            except Exception:
+                pass
+            # Update Build tab desktop button text dynamically
+            try:
+                desktop_btn.configure(text=f"Create {new_bin}.desktop file")
+            except Exception:
+                pass
+            # If hicolor not yet generated, keep Icon var consistent (will be used when writing desktop file)
+            # No automatic change if hicolor already has icons – write_desktop_file will handle hicolor case
+        finally:
+            _syncing_bin["active"] = False
+            # trigger global state refresh
+            try:
+                update_action_states()
+            except Exception:
+                pass
+
+    # Bind bin_name typing to auto-fill Package and Exec
+    try:
+        bin_name.bind("<KeyRelease>", _sync_bin_to_package_and_exec)
+        bin_name.bind("<FocusOut>", _sync_bin_to_package_and_exec)
+    except Exception:
+        pass
 
     # ---------- Hicolor icons option ----------
     hicolor_generated = {"value": False, "source": None}
@@ -375,7 +564,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
         )
         if not src:
             return
-        cp_h = package.get().strip() or package_name
+        cp_h = _get_effective_bin()
         res = c.generate_hicolor_icons(package_root, cp_h, src)
         if res:
             hicolor_generated["value"] = True
@@ -384,8 +573,11 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
             # For hicolor, Icon should be just package name (theme lookup)
             # Update desktop Icon field to use hicolor name
             try:
-                desktop_icon.delete(0, "end")
-                desktop_icon.insert(0, cp_h)
+                if hasattr(desktop_icon, "set"):
+                    desktop_icon.set(cp_h)
+                else:
+                    desktop_icon.delete(0, "end")
+                    desktop_icon.insert(0, cp_h)
             except Exception:
                 pass
             # If desktop file already exists, patch its Icon line to hicolor
@@ -528,7 +720,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
     def create_appstream_file():
         """Dedicated AppStream creation – calls core.write_appstream_file().
         App ID is now fetched from package metadata Maintainer when left as placeholder."""
-        cp = package.get().strip() or package_name
+        cp = _get_effective_bin()
         cv = version.get().strip() or "1.0"
         aid = appstream_id.get().strip()
         # If App ID is placeholder / empty / old hardcoded tuffgit21, derive from Maintainer
@@ -599,7 +791,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
     # Keep AppStream name/summary in sync – like other entries, App ID stays placeholder unless user typed or old value needs migration
     def _sync_appstream_defaults(*_):
         try:
-            cur_pkg = package.get().strip() or package_name
+            cur_pkg = _get_effective_bin()
             cur_id = appstream_id.get().strip()
             # only treat non-empty placeholder-like values as needing migration; empty stays as placeholder (like other entries)
             is_placeholder = (
@@ -720,7 +912,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
         update_action_states()
 
     def choose_python_file():
-        selected_name = askPyfile(package_root, package_name)
+        selected_name = askPyfile(package_root, _get_effective_bin())
         if selected_name:
             selected_file["name"] = selected_name
         # FIX: Package & Desktop entries must stay available even when file
@@ -728,16 +920,16 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
         # instead of only selected_file flag, and keep metadata editable.
         try:
             _has = False
-            _pkg = package.get().strip() or package_name
+            _pkg = _get_effective_bin()
             _share = Path(package_root) / "usr" / "share" / _pkg
             if _share.is_dir():
-                _has = any(p.name not in ("vendor", "DebAppBuilderIcon.png") for p in _share.iterdir())
+                _has = any(p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg") for p in _share.iterdir())
             if not _has:
                 _share_root = Path(package_root) / "usr" / "share"
                 if _share_root.is_dir():
                     for sub in _share_root.iterdir():
                         if sub.is_dir() and sub.name not in ("applications",):
-                            if any(p.name not in ("vendor", "DebAppBuilderIcon.png") for p in sub.iterdir()):
+                            if any(p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg") for p in sub.iterdir()):
                                 _has = True
                                 break
             # always keep Package/Desktop/AppStream editable – only gate if truly no payload
@@ -750,16 +942,16 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
         refresh_file_indicator()
 
     def vendor_pkgs():
-        c.vendor_dependencies(package_root, package_name)
+        c.vendor_dependencies(package_root, _get_effective_bin())
         update_package_info()
         log("Vendor dependencies bundled.", "ok")
 
     def refresh_file_indicator():
         for child in file_list_frame.winfo_children():
             child.destroy()
-        application_path = Path(package_root) / "usr" / "share" / package_name
+        application_path = Path(package_root) / "usr" / "share" / _get_effective_bin()
         files = sorted(path for path in application_path.iterdir()
-                       if path.name != "vendor" and path.name != "DebAppBuilderIcon.png") \
+                       if path.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg")) \
             if application_path.exists() else []
         if not files:
             ctk.CTkLabel(file_list_frame, text="No application files selected",
@@ -822,14 +1014,14 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
             # metadata should stay editable. Sync from disk instead.
             try:
                 # re-sync selected_file from remaining payload
-                _pkg2 = package.get().strip() or package_name
+                _pkg2 = _get_effective_bin()
                 _root2 = Path(package_root)
                 _found = None
                 for cand in (_pkg2, package_name):
                     _ap = _root2 / "usr" / "share" / cand
                     if _ap.is_dir():
                         for p in _ap.iterdir():
-                            if p.name not in ("vendor", "DebAppBuilderIcon.png"):
+                            if p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg"):
                                 _found = p.name
                                 break
                     if _found:
@@ -878,7 +1070,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
             pass
 
     def create_control_file():
-        cp = package.get().strip()
+        cp = _get_effective_bin()
         cv = version.get().strip()
         cm = maintainer.get().strip()
         cd = description.get().strip()
@@ -924,15 +1116,18 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
             pass
         update_action_states()
         # Extra ensure: if BUILD should be ready but still disabled due to stale has_payload,
-        # force a second update after UI settles
+        # force a second update after UI settles – guarded for destroyed window
         try:
-            app.after(50, update_action_states)
+            if app.winfo_exists():
+                app.after(50, lambda: update_action_states() if app.winfo_exists() else None)
+        except (tk.TclError, RuntimeError):
+            pass
         except Exception:
             pass
         update_package_info()
 
     def create_execution_file():
-        cp = package.get().strip()
+        cp = _get_effective_bin()
         py_file = selected_file["name"]
         if not cp or not version.get().strip() or not py_file:
             messagebox.showwarning(
@@ -996,15 +1191,33 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
         update_package_info()
 
     def create_desktop_file():
-        cp = package.get().strip()
+        cp = _get_effective_bin()
         entry_name = desktop_name.get().strip()
         entry_exec = desktop_exec.get().strip()
+        # Enforce Exec uses bin name if user mistakenly typed display Name with spaces/caps
+        try:
+            _bin = _get_effective_bin()
+            if entry_exec != _bin and " " in entry_exec and entry_exec.strip().lower() == entry_name.strip().lower():
+                entry_exec = _bin
+                try:
+                    desktop_exec.delete(0, "end")
+                    desktop_exec.insert(0, _bin)
+                except Exception:
+                    pass
+        except Exception:
+            pass
         if not cp or not entry_name or not entry_exec:
             messagebox.showwarning(
                 title="Debian App Builder",
                 message="Package, desktop name, and Exec are required.",
             )
             return
+        # When package has no icons, auto-use debian-app-builder-package.svg
+        # as hicolor icons: icons/hicolor/{16x16,32x32,48x48,64x64,128x128,256x256}/apps + scalable
+        try:
+            _ensure_fallback_hicolor_if_needed(cp)
+        except Exception:
+            pass
         # Path= handling – optional working directory, placeholder-like others
         try:
             _path_val = desktop_path_entry.get().strip()
@@ -1033,14 +1246,14 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
     def _sync_file_state_early():
         """Early sync helper so build_package can call it before later definition overwrites it."""
         try:
-            pkg = package.get().strip() or package_name
+            pkg = _get_effective_bin()
             root = Path(package_root)
             if not selected_file["name"]:
                 for cand_pkg in (pkg, package_name):
                     app_share = root / "usr" / "share" / cand_pkg
                     if app_share.is_dir():
                         for p in app_share.iterdir():
-                            if p.name not in ("vendor", "DebAppBuilderIcon.png"):
+                            if p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg"):
                                 selected_file["name"] = p.name
                                 break
                         if selected_file["name"]:
@@ -1051,12 +1264,12 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
                         for sub in share_root.iterdir():
                             if sub.is_dir() and sub.name not in ("applications",):
                                 for p in sub.iterdir():
-                                    if p.name not in ("vendor", "DebAppBuilderIcon.png"):
+                                    if p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg"):
                                         selected_file["name"] = p.name
                                         break
                                 if selected_file["name"]:
                                     break
-            cur_pkg = package.get().strip()
+            cur_pkg = _get_effective_bin()
             control_exists = (root / "DEBIAN" / "control").is_file() and (root / "DEBIAN" / "control").stat().st_size > 0
             file_state["control_created"] = control_exists
             if cur_pkg:
@@ -1070,7 +1283,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
             pass
 
     def build_package():
-        cp = package.get().strip()
+        cp = _get_effective_bin()
         cv = version.get().strip()
         if not cp or not cv:
             messagebox.showwarning(
@@ -1097,6 +1310,18 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
             sync_file_state()
         except Exception:
             pass
+        # Ensure fallback hicolor icons when package has no icons
+        # Use debian-app-builder-package.svg -> icons/hicolor/16x16..256x256/apps + scalable/apps
+        try:
+            _ensure_fallback_hicolor_if_needed(cp)
+            # re-sync after fallback generation (creates hicolor, updates status)
+            try:
+                hicolor_generated["value"] = True
+                hicolor_status_var.set(f"Auto-generated fallback hicolor icons for {cp}")
+            except Exception:
+                pass
+        except Exception:
+            pass
         # ensure execution/desktop checks use current cp
         missing = []
         try:
@@ -1113,7 +1338,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
             app_share = root / "usr" / "share" / cp
             has_payload = False
             if app_share.is_dir():
-                has_payload = any(p.name not in ("vendor", "DebAppBuilderIcon.png") for p in app_share.iterdir())
+                has_payload = any(p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg") for p in app_share.iterdir())
             if not has_payload:
                 missing.append("Application file/folder — Choose File or Folder")
         if missing:
@@ -1321,7 +1546,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
         effective = "normal" if state in ("normal", "disabled") else state
         # Keep AppStream description textbox sync
         for widget in (
-            package, version, architecture, depends, maintainer, description,
+            bin_name, package, version, architecture, depends, maintainer, description,
             desktop_name, desktop_comment, desktop_exec, desktop_categories,
             desktop_path_entry,
         ):
@@ -1349,12 +1574,12 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
     build_ready_announced = {"value": False}
 
     def desktop_form_ready():
-        return bool(package.get().strip() and desktop_name.get().strip() and desktop_exec.get().strip())
+        return bool(_get_effective_bin() and desktop_name.get().strip() and desktop_exec.get().strip())
 
     def sync_file_state():
         """Re-validate on-disk files and keep file_state / selected_file consistent (fixes stale-state / double-control bug)."""
         try:
-            pkg = package.get().strip() or package_name
+            pkg = _get_effective_bin()
             root = Path(package_root)
             # sync selected_file if missing but payload exists – check all share subfolders leniently
             if not selected_file["name"]:
@@ -1364,7 +1589,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
                     app_share = root / "usr" / "share" / cand_pkg
                     if app_share.is_dir():
                         for p in app_share.iterdir():
-                            if p.name not in ("vendor", "DebAppBuilderIcon.png"):
+                            if p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg"):
                                 candidates.append(p.name)
                         if candidates:
                             selected_file["name"] = candidates[0]
@@ -1376,14 +1601,14 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
                         for sub in share_root.iterdir():
                             if sub.is_dir() and sub.name not in ("applications",):
                                 for p in sub.iterdir():
-                                    if p.name not in ("vendor", "DebAppBuilderIcon.png"):
+                                    if p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg"):
                                         selected_file["name"] = p.name
                                         candidates.append(p.name)
                                         break
                                 if candidates:
                                     break
             # sync flags from filesystem (use current pkg field) – control is package-agnostic
-            cur_pkg = package.get().strip()
+            cur_pkg = _get_effective_bin()
             # control exists regardless of package name – check once
             control_exists = (root / "DEBIAN" / "control").is_file() and (root / "DEBIAN" / "control").stat().st_size > 0
             file_state["control_created"] = control_exists
@@ -1419,15 +1644,15 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
 
     def update_action_states(*_event):
         sync_file_state()
-        control_ready = all((package.get().strip(), version.get().strip(),
+        control_ready = all((_get_effective_bin(), version.get().strip(),
                              maintainer.get().strip(), description.get().strip()))
         # execution needs payload on disk OR selected file – lenient check across share
         has_payload = False
         try:
-            cur_pkg = package.get().strip() or package_name
+            cur_pkg = _get_effective_bin()
             # check current pkg share first
             app_share = Path(package_root) / "usr" / "share" / cur_pkg
-            if app_share.is_dir() and any(p.name not in ("vendor", "DebAppBuilderIcon.png") for p in app_share.iterdir()):
+            if app_share.is_dir() and any(p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg") for p in app_share.iterdir()):
                 has_payload = True
             else:
                 # lenient: check any share subfolder (fixes double-control when pkg renamed)
@@ -1435,7 +1660,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
                 if share_root.is_dir():
                     for sub in share_root.iterdir():
                         if sub.is_dir() and sub.name not in ("applications",):
-                            if any(p.name not in ("vendor", "DebAppBuilderIcon.png") for p in sub.iterdir()):
+                            if any(p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg") for p in sub.iterdir()):
                                 has_payload = True
                                 break
                 # also consider selected_file
@@ -1443,10 +1668,10 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
                     has_payload = True
         except Exception:
             has_payload = False
-        execution_ready = bool(package.get().strip() and version.get().strip() and (selected_file["name"] or has_payload))
+        execution_ready = bool(_get_effective_bin() and version.get().strip() and (selected_file["name"] or has_payload))
         desktop_ready = desktop_form_ready()
         # BUILD requires real on-disk artifacts – use lenient has_payload but strict file checks
-        cur_pkg = package.get().strip()
+        cur_pkg = _get_effective_bin()
         root = Path(package_root)
         control_ok = (root / "DEBIAN" / "control").is_file() and (root / "DEBIAN" / "control").stat().st_size > 0
         exec_ok = (root / "usr" / "bin" / cur_pkg).is_file() if cur_pkg else False
@@ -1465,7 +1690,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
             _adesc = appstream_description.get("1.0", "end-1c").strip() if hasattr(appstream_description, "get") else ""
         except Exception:
             _adesc = ""
-        appstream_ready = bool(package.get().strip() and appstream_name.get().strip() and appstream_summary.get().strip() and _adesc)
+        appstream_ready = bool(_get_effective_bin() and appstream_name.get().strip() and appstream_summary.get().strip() and _adesc)
         try:
             appstream_btn.configure(state="normal" if appstream_ready else "disabled")
         except Exception:
@@ -1521,7 +1746,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
         else:
             set_status("Complete the required steps", ok=None)
 
-    for entry in (package, version, architecture, depends, maintainer, description,
+    for entry in (bin_name, package, version, architecture, depends, maintainer, description,
                  desktop_name, desktop_comment, desktop_exec, desktop_term, desktop_categories, desktop_path_entry,
                  appstream_id, appstream_name, appstream_summary, appstream_developer,
                  appstream_license, appstream_meta_license, appstream_homepage,
@@ -1534,6 +1759,11 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
         appstream_description.bind("<KeyRelease>", update_action_states)
     except Exception:
         pass
+    # Also bind bin_name specifically for sync (ensured above but keep here for state)
+    try:
+        bin_name.bind("<KeyRelease>", _sync_bin_to_package_and_exec)
+    except Exception:
+        pass
 
     # FIX: sync selected_file from disk before deciding entry state –
     # when starting from scratch the Application tab may already list a file
@@ -1541,14 +1771,14 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
     # Package & Desktop entries to be incorrectly disabled.
     try:
         # early sync (same logic as sync_file_state) to populate selected_file
-        _pkg0 = package.get().strip() or package_name
+        _pkg0 = _get_effective_bin()
         _root0 = Path(package_root)
         if not selected_file["name"]:
             for cand_pkg in (_pkg0, package_name):
                 _ap0 = _root0 / "usr" / "share" / cand_pkg
                 if _ap0.is_dir():
                     for p in _ap0.iterdir():
-                        if p.name not in ("vendor", "DebAppBuilderIcon.png"):
+                        if p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg"):
                             selected_file["name"] = p.name
                             break
                     if selected_file["name"]:
@@ -1559,7 +1789,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
                     for sub in _sr0.iterdir():
                         if sub.is_dir() and sub.name not in ("applications",):
                             for p in sub.iterdir():
-                                if p.name not in ("vendor", "DebAppBuilderIcon.png"):
+                                if p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg"):
                                     selected_file["name"] = p.name
                                     break
                             if selected_file["name"]:
@@ -1636,6 +1866,27 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
                                 pass
                 except Exception:
                     pass
+            # Binary name – source of truth (migrate old saves where package held the bin)
+            try:
+                _bin_val = fields.get("bin_name")
+                if not _bin_val:
+                    _bin_val = fields.get("package") or package_name
+                if _bin_val:
+                    _set_entry(bin_name, "bin_name")
+                    # if _set_entry didn't set because key missing, set manually
+                    try:
+                        if not bin_name.get().strip():
+                            bin_name.delete(0, "end")
+                            bin_name.insert(0, str(_bin_val))
+                    except Exception:
+                        pass
+                    # keep package and exec in sync with bin on load
+                    try:
+                        _sync_bin_to_package_and_exec()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
             _set_entry(package, "package")
             _set_entry(version, "version")
             _set_entry(architecture, "architecture")
@@ -1693,13 +1944,13 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
             # sync from disk if needed
             try:
                 if not selected_file["name"]:
-                    _pkg_r = package.get().strip() or package_name
+                    _pkg_r = _get_effective_bin()
                     _root_r = Path(package_root)
                     for cand in (_pkg_r, package_name):
                         _apr = _root_r / "usr" / "share" / cand
                         if _apr.is_dir():
                             for p in _apr.iterdir():
-                                if p.name not in ("vendor", "DebAppBuilderIcon.png"):
+                                if p.name not in ("vendor", "DebAppBuilderIcon.png", "debian-app-builder-package.svg"):
                                     selected_file["name"] = p.name
                                     break
                         if selected_file["name"]:
@@ -1727,6 +1978,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
                 "package_name": str(package_name),
                 "package_version": str(package_version),
                 "fields": {
+                    "bin_name": bin_name.get(),
                     "package": package.get(),
                     "version": version.get(),
                     "architecture": architecture.get(),
@@ -1800,6 +2052,16 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
 def build_structure():
     package_name = output.get().strip()
     version = output2.get().strip()
+    # Architecture entry in root – allows any arch (all, amd64, i386, arm64, armhf, etc.)
+    try:
+        arch = output3.get().strip() if "output3" in globals() and output3.winfo_exists() else "amd64"
+    except Exception:
+        try:
+            arch = output3.get().strip()
+        except Exception:
+            arch = "amd64"
+    if not arch:
+        arch = "amd64"
 
     if not package_name or not version:
         messagebox.showwarning(
@@ -1826,7 +2088,7 @@ def build_structure():
             pass
 
     try:
-        package_root = create_deb_structure(package_name, version, arch="amd64", output_dir=output_dir)
+        package_root = create_deb_structure(package_name, version, arch=arch, output_dir=output_dir)
     except (OSError, ValueError) as error:
         messagebox.showerror(
             "Debian App Builder",
@@ -1834,7 +2096,27 @@ def build_structure():
         )
         return
 
-    root.destroy()
+    # Properly tear down root before opening writefiles CTk – avoid CustomTkinter after race
+    # (ScalingTracker / AppearanceModeTracker keep `after` loops that raise
+    #  "invalid command name ...check_dpi_scaling" after destroy)
+    try:
+        root.update_idletasks()
+    except Exception:
+        pass
+    try:
+        # withdraw first so trackers see destroyed state earlier, suppress pending afters
+        root.withdraw()
+    except Exception:
+        pass
+    try:
+        root.destroy()
+    except tk.TclError:
+        pass
+    except Exception:
+        try:
+            root.quit()
+        except Exception:
+            pass
     writefiles(package_root, package_name, version)
 
 
@@ -1845,7 +2127,7 @@ def askPyfile(package_root, package_name):
 ctk.set_appearance_mode("system")
 root = ctk.CTk()
 
-center_window(root, 420, 545)
+center_window(root, 420, 590)
 root.resizable(False, False)
 root.title(f"Debian App Builder {VERSION}")
 window_icon = load_window_icon(root)
@@ -1881,11 +2163,17 @@ out_label2.grid(row=2, column=0, padx=16, pady=(4, 4), sticky="w")
 output2 = ctk.CTkEntry(input_frame, placeholder_text="1.0.0")
 output2.grid(row=3, column=0, padx=16, pady=(0, 10), sticky="ew")
 
+out_label_arch = ctk.CTkLabel(input_frame, text="Architecture", anchor="w")
+out_label_arch.grid(row=4, column=0, padx=16, pady=(4, 4), sticky="w")
+output3 = ctk.CTkEntry(input_frame, placeholder_text="amd64  •  all, amd64, i386, arm64, armhf")
+output3.insert(0, "amd64")
+output3.grid(row=5, column=0, padx=16, pady=(0, 10), sticky="ew")
+
 output_dir_label = ctk.CTkLabel(input_frame, text="Choose where the .deb structure is created.", anchor="w")
-output_dir_label.grid(row=4, column=0, padx=16, pady=(4, 4), sticky="w")
+output_dir_label.grid(row=6, column=0, padx=16, pady=(4, 4), sticky="w")
 output_dir_var = ctk.StringVar(value=str(Path.cwd()))
 output_dir_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
-output_dir_frame.grid(row=5, column=0, padx=16, pady=(0, 16), sticky="ew")
+output_dir_frame.grid(row=7, column=0, padx=16, pady=(0, 16), sticky="ew")
 output_dir_frame.grid_columnconfigure(0, weight=1)
 output_dir_entry = ctk.CTkEntry(output_dir_frame, textvariable=output_dir_var, placeholder_text=str(Path.cwd()))
 output_dir_entry.grid(row=0, column=0, sticky="ew")
@@ -1920,6 +2208,7 @@ def _collect_initial_session():
             "fields": {
                 "package_name": output.get(),
                 "package_version": output2.get(),
+                "package_arch": output3.get() if "output3" in globals() else "amd64",
                 "output_dir": output_dir_var.get(),
             },
         }
@@ -1931,7 +2220,7 @@ def _on_root_close():
     # Only prompt if user typed something
     has_input = False
     try:
-        has_input = bool(output.get().strip() or output2.get().strip())
+        has_input = bool(output.get().strip() or output2.get().strip() or (output3.get().strip() and output3.get().strip() != "amd64"))
     except Exception:
         has_input = False
     if not has_input and not SAVE_FILE.is_file():
@@ -2030,6 +2319,13 @@ def _load_saved_session_startup():
                     output2.insert(0, str(fields.get("package_version", "")))
                 except Exception:
                     pass
+            if "package_arch" in fields or "output3" in fields or "architecture" in fields:
+                try:
+                    _arch_val = fields.get("package_arch") or fields.get("architecture") or fields.get("output3") or "amd64"
+                    output3.delete(0, "end")
+                    output3.insert(0, str(_arch_val))
+                except Exception:
+                    pass
             if "output_dir" in fields:
                 try:
                     output_dir_var.set(str(fields.get("output_dir", "")))
@@ -2040,10 +2336,17 @@ def _load_saved_session_startup():
             messagebox.showerror("Debian App Builder", f"Failed to load saved session:\n{e}")
 
 
-# Check for saved session shortly after UI shows
+# Check for saved session shortly after UI shows – guarded for destroyed window
 try:
-    root.after(400, _load_saved_session_startup)
+    if root.winfo_exists():
+        root.after(400, lambda: _load_saved_session_startup() if root.winfo_exists() else None)
+except (tk.TclError, RuntimeError):
+    pass
 except Exception:
     pass
 
-root.mainloop()
+try:
+    root.mainloop()
+except tk.TclError:
+    # suppress Tcl after race on exit (CustomTkinter scaling tracker)
+    pass
