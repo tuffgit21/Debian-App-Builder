@@ -34,7 +34,7 @@
 <section class="intro" id="about" aria-labelledby="about-title">
 <p class="eyebrow">DEBIAN APP BUILDER — v3.0 • WSL & Debian</p>
 <h1 id="about-title">Craft beautiful <span style="color:var(--accent)">.deb</span> packages in one click.</h1>
-<p class="intro-text">Turn a Python app, C source, image or folder into an installable Debian package. No hand-written <code>DEBIAN/control</code> — just fill, click Build.</p>
+<p class="intro-text">Turn a Python app, C source into an installable Debian package. No hand-written <code>DEBIAN/control</code> — just fill, click Build.</p>
 <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px">
 <span style="font-size:.75rem; border:1px solid var(--border); padding:4px 10px; border-radius:999px; background:var(--card)">⚡ One-click <code>dpkg-deb</code></span>
 <span style="font-size:.75rem; border:1px solid var(--border); padding:4px 10px; border-radius:999px; background:var(--card)">🖥️ WSL + Debian/Ubuntu</span>
@@ -120,10 +120,10 @@ sudo apt update && sudo apt install debian-app-builder</code></pre>
 <div aria-hidden="true" aria-label="Image preview" class="lightbox" id="lightbox" role="dialog">
 <img alt="" src=""/>
 </div>
-<div aria-hidden="true" aria-label="Social media links" class="social-popup" id="social-popup" role="dialog">
+<div aria-hidden="true" aria-modal="true" aria-labelledby="social-popup-title" class="social-popup" id="social-popup" role="dialog">
 <div class="social-card">
-<button aria-label="Close" class="social-close">×</button>
-<h3>Connect with us</h3>
+<button aria-label="Close dialog" class="social-close" type="button">×</button>
+<h3 id="social-popup-title">Connect with us</h3>
 <div class="social-grid">
 <a aria-label="GitHub" class="social-link" href="https://github.com/tuffgit21" rel="noopener" style="--c:#ffffff" target="_blank">
 <svg aria-hidden="true" viewbox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" fill="currentColor"></path></svg>
@@ -173,16 +173,32 @@ sudo apt update && sudo apt install debian-app-builder</code></pre>
         lb.addEventListener('click', closeLb);
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); });
 
-        // Social media popup
+        // Social media popup — fixed: scroll lock, focus, z-index, backdrop click, Escape
         const sp = document.getElementById('social-popup');
-        const openSp = () => { sp.classList.add('open'); sp.setAttribute('aria-hidden', 'false'); };
-        const closeSp = () => { sp.classList.remove('open'); sp.setAttribute('aria-hidden', 'true'); };
-        document.getElementById('open-social')?.addEventListener('click', openSp);
+        const openBtn = document.getElementById('open-social');
+        let lastFocus = null;
+        const openSp = () => {
+            lastFocus = document.activeElement;
+            sp.classList.add('open');
+            sp.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            // move focus to close button for accessibility
+            sp.querySelector('.social-close')?.focus();
+        };
+        const closeSp = () => {
+            if(!sp.classList.contains('open')) return;
+            sp.classList.remove('open');
+            sp.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            if(lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+        };
+        openBtn?.addEventListener('click', openSp);
         sp.querySelector('.social-close')?.addEventListener('click', closeSp);
         sp.addEventListener('click', e => { if (e.target === sp) closeSp(); });
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSp(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && sp.classList.contains('open')) closeSp(); });
 
-        // PyShell-like hdiv toggle (small header with icon)
+        // PyShell-like hdiv toggle (small header with icon) — fixed anchor offset
+        const header = document.querySelector('.hdiv');
         const toggle = document.querySelector('.menu-toggle');
         const nav = document.getElementById('main-navigation');
         if(toggle && nav){
@@ -190,10 +206,56 @@ sudo apt update && sudo apt install debian-app-builder</code></pre>
                 const open = nav.classList.toggle('is-open');
                 toggle.setAttribute('aria-expanded', open);
             });
-            nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
-                setTimeout(()=>{ nav.classList.remove('is-open'); toggle.setAttribute('aria-expanded','false'); }, 120);
+            const closeNav = ()=>{ nav.classList.remove('is-open'); toggle.setAttribute('aria-expanded','false'); };
+            // offset-aware smooth scroll (prevents sticky header covering target / "goes to another section")
+            const scrollToHash = (hash, pushHistory=true)=>{
+                const target = document.querySelector(hash);
+                if(!target) return false;
+                closeNav();
+                const headerH = header ? header.offsetHeight : 60;
+                const top = target.getBoundingClientRect().top + window.scrollY - headerH - 12;
+                // double rAF ensures layout after menu close is applied before measuring scroll
+                requestAnimationFrame(()=> requestAnimationFrame(()=>{
+                    window.scrollTo({top: Math.max(0, top), behavior: 'smooth'});
+                    if(pushHistory) history.pushState(null, '', hash);
+                }));
+                return true;
+            };
+            nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',(e)=>{
+                const href = a.getAttribute('href');
+                if(href && href.startsWith('#')){
+                    if(scrollToHash(href)) e.preventDefault();
+                    else closeNav();
+                } else {
+                    closeNav();
+                }
             }));
-            document.addEventListener('keydown', e=>{ if(e.key==='Escape' && nav.classList.contains('is-open')){ nav.classList.remove('is-open'); toggle.setAttribute('aria-expanded','false'); }});
+            // also handle brand link #top outside nav
+            document.querySelectorAll('a[href^="#"]').forEach(a=>{
+                if(nav.contains(a)) return;
+                a.addEventListener('click', (e)=>{
+                    const href = a.getAttribute('href');
+                    if(href && href.length>1 && document.querySelector(href)){
+                        if(scrollToHash(href)) e.preventDefault();
+                    }
+                });
+            });
+            // correct initial load with hash (e.g. /#downloads) after layout
+            if(location.hash){
+                const h = location.hash;
+                // let browser do initial jump, then correct offset
+                window.addEventListener('load', ()=>{
+                    setTimeout(()=>{
+                        const t = document.querySelector(h);
+                        if(t){
+                            const headerH = header ? header.offsetHeight : 60;
+                            const top = t.getBoundingClientRect().top + window.scrollY - headerH - 12;
+                            window.scrollTo({top: Math.max(0, top), behavior: 'auto'});
+                        }
+                    }, 80);
+                });
+            }
+            document.addEventListener('keydown', e=>{ if(e.key==='Escape' && nav.classList.contains('is-open')) closeNav(); });
         }
     </script>
 </body>
