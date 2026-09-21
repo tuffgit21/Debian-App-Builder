@@ -1,5 +1,5 @@
 /* Debian App Builder — Service Worker for PWA install on Android */
-const CACHE_VERSION = 'deb-builder-v1';
+const CACHE_VERSION = 'deb-builder-v2';
 const CORE_CACHE = CACHE_VERSION + '-core';
 const RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 
@@ -12,7 +12,9 @@ const CORE_ASSETS = [
   './favicon.svg',
   './DebAppBuilderLogo.svg',
   './DebAppBuilderLogo.png',
-  './DebAppBuilderLogo.ico'
+  './DebAppBuilderLogo.ico',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
