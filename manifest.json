@@ -1,0 +1,74 @@
+{
+  "name": "Debian App Builder",
+  "short_name": "DebBuilder",
+  "description": "Craft beautiful .deb packages in one click. Turn Python, C or an app folder into an installable Debian package on WSL & Debian/Ubuntu.",
+  "id": "./index.html",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0f0f0f",
+  "theme_color": "#A80030",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["developer", "utilities", "package-manager"],
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./DebAppBuilderLogo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./DebAppBuilderLogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./DebAppBuilderLogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./DebAppBuilderLogo.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Features",
+      "short_name": "Features",
+      "description": "View features",
+      "url": "./index.html#features",
+      "icons": [{ "src": "./favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Screenshots",
+      "short_name": "Screens",
+      "description": "View screenshots",
+      "url": "./index.html#screenshots",
+      "icons": [{ "src": "./favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Downloads",
+      "short_name": "Downloads",
+      "description": "Download latest .deb",
+      "url": "./download.html",
+      "icons": [{ "src": "./favicon.svg", "sizes": "any" }]
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false,
+  "launch_handler": { "client_mode": "navigate-existing" }
+}

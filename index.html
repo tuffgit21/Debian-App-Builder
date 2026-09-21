@@ -3,8 +3,14 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Debian App Builder</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <title>Debian App Builder</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#A80030" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Debian App Builder" />
+    <link rel="apple-touch-icon" href="DebAppBuilderLogo.png" />
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
@@ -256,6 +262,11 @@ sudo apt update && sudo apt install debian-app-builder</code></pre>
                 });
             }
             document.addEventListener('keydown', e=>{ if(e.key==='Escape' && nav.classList.contains('is-open')) closeNav(); });
+        }
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js', {scope: './'}).catch(e => console.warn('SW failed', e));
+          });
         }
     </script>
 </body>
