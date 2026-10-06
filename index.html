@@ -78,19 +78,25 @@
 <div aria-label="Screenshot gallery" class="screenshots" role="region">
 <!-- Template: copy a <figure class="shot"> block to add more screenshots -->
 <figure class="shot">
-<img alt="Debian-App-Builder-screenshot1" src="./images/DebAppBuilder-screenshot1.png"/>
+<img alt="Debian-App-Builder-screenshot1" src="./images/debian-app-builder-screenshot1.png"/>
 </figure>
 <figure class="shot">
-<img alt="Debian-App-Builder-screenshot2" src="./images/DebAppBuilder-screenshot2.png"/>
+<img alt="Debian-App-Builder-screenshot2" src="./images/debian-app-builder-screenshot2.png"/>
 </figure>
 <figure class="shot">
-<img alt="Debian-App-Builder-screenshot3" height="360" src="./images/DebAppBuilder-screenshot3.png"/>
+<img alt="Debian-App-Builder-screenshot3" height="360" src="./images/debian-app-builder-screenshot3.png"/>
 </figure>
 <figure class="shot">
-<img alt="Debian-App-Builder-screenshot4" src="./images/DebAppBuilder-screenshot4.png"/>
+<img alt="Debian-App-Builder-screenshot4" src="./images/debian-app-builder-screenshot4.png"/>
 </figure>
 <figure class="shot">
-<img alt="Debian-App-Builder-screenshot5" src="./images/DebAppBuilder-screenshot5.png"/>
+<img alt="Debian-App-Builder-screenshot5" src="./images/debian-app-builder-screenshot5.png"/>
+</figure>
+<figure class="shot">
+<img alt="Debian-App-Builder-screenshot5" src="./images/debian-app-builder-screenshot6.png"/>
+</figure>
+<figure class="shot">
+<img alt="Debian-App-Builder-screenshot5" src="./images/debian-app-builder-screenshot7.png"/>
 </figure>
 </div>
 <button aria-label="Next screenshot" class="gallery-btn next">›</button>
@@ -105,7 +111,8 @@
 </div>
 <details style="margin-top:12px; border:1px solid var(--border); border-radius:10px; padding:10px 12px; background:rgba(255,255,255,.03); max-width:100%; overflow:hidden; box-sizing:border-box">
 <summary style="cursor:pointer; font-size:.85rem; font-weight:600">APT repo (recommended)</summary>
-<pre style="margin:8px 0 0; background:#0f0f0f; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:.70rem; line-height:1.5; overflow-x:auto; overflow-y:hidden; max-width:100%; box-sizing:border-box; white-space:pre-wrap; word-break:break-all; overflow-wrap:anywhere"><code style="white-space:pre-wrap; word-break:break-all; overflow-wrap:anywhere">echo "deb [trusted=yes] https://tuffgit21.github.io/tuffgit21-APT-repo stable main" | sudo tee /etc/apt/sources.list.d/tuffgit21.list
+<p>⚠️ <strong>WARNING:</strong> Due to domain change. you need to resign the old software repository! <br> Previously <code>tuffgit21.github.io</code> now <code>tuffgit21.is-a.dev</code> <br> Occured in Oct. 6, 2026</p>
+<pre style="margin:8px 0 0; background:#0f0f0f; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:.70rem; line-height:1.5; overflow-x:auto; overflow-y:hidden; max-width:100%; box-sizing:border-box; white-space:pre-wrap; word-break:break-all; overflow-wrap:anywhere"><code style="white-space:pre-wrap; word-break:break-all; overflow-wrap:anywhere">echo "deb [trusted=yes] https://tuffgit21.is-a.dev/tuffgit21-APT-repo stable main" | sudo tee /etc/apt/sources.list.d/tuffgit21.list
 sudo apt update && sudo apt install debian-app-builder</code></pre>
 </details>
 <p style="margin:10px 0 0; font-size:.8rem; color:var(--muted)">Requires <code>customtkinter</code> + <code>python3-tk</code> + <code>dpkg-dev</code> on Debian/WSL.</p>
