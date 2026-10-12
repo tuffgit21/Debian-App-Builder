@@ -4,7 +4,7 @@
 </p>
 <h2 align="center"> Debian App Builder</h2>
 
-[![Website](https://img.shields.io/badge/site-tuffgit21.github.io-blue?style=for-the-badge)](https://tuffgit21.github.io/Debian-App-Builder/)
+[![Website](https://img.shields.io/badge/site-tuffgit21.github.io-blue?style=for-the-badge)](https://tuffgit21.is-a.dev/Debian-App-Builder/)
 [![Status](https://img.shields.io/badge/status-live-success?style=for-the-badge)](https://tuffgit21.github.io/Debian-App-Builder/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE.txt)
 <br>
@@ -17,11 +17,11 @@ Package a project in a few guided steps, then build an installable Debian packag
 ## Screenshots
 
 <p align="center">
-	<img width="260" alt="Debian App Builder screenshot 1" src="images/DebAppBuilder-screenshot1.png" />
-	<img width="260" alt="Debian App Builder screenshot 2" src="images/DebAppBuilder-screenshot2.png" />
-	<img width="260" alt="Debian App Builder screenshot 3" src="images/DebAppBuilder-screenshot3.png" />
-	<img width="260" alt="Debian App Builder screenshot 4" src="images/DebAppBuilder-screenshot4.png" />
-	<img width="260" alt="Debian App Builder screenshot 5" src="images/DebAppBuilder-screenshot5.png" />
+	<img width="260" alt="Debian App Builder screenshot 1" src="images/debian-app-builder-screenshot1.png" />
+	<img width="260" alt="Debian App Builder screenshot 2" src="images/debian-app-builder-screenshot2.png" />
+	<img width="260" alt="Debian App Builder screenshot 3" src="images/debian-app-builder-screenshot3.png" />
+	<img width="260" alt="Debian App Builder screenshot 4" src="images/debian-app-builder-screenshot4.png" />
+	<img width="260" alt="Debian App Builder screenshot 5" src="images/debian-app-builder-screenshot5.png" />
 </p>
 
 ## Features
