@@ -40,7 +40,7 @@ sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 import customtkinter as ctk
 import core as c
 from core import create_deb_structure
-VERSION = "v3.1-dev-test"
+VERSION = "v3.1-dev-test.1"
 
 # Fix CustomTkinter "invalid command name ...check_dpi_scaling" / "...update" after race
 # This pops every time write_files() loads because ScalingTracker / AppearanceModeTracker
