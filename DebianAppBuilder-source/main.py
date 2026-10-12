@@ -5,14 +5,42 @@ import stat
 import platform
 import shutil
 import subprocess
-import tkinter as tk
 from pathlib import Path
+
+
+def _has_graphical_display():
+    return bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+
+
+arguments = sys.argv[1:]
+force_cli = "--cli" in arguments or "-c" in arguments
+force_gui = "--gui" in arguments
+
+if force_cli and force_gui:
+    raise SystemExit("Choose either --cli/-c or --gui.")
+
+arguments = [argument for argument in arguments if argument not in ("--cli", "-c", "--gui")]
+headless_linux = platform.system() == "Linux" and not _has_graphical_display()
+
+if force_cli or (headless_linux and not force_gui):
+    if headless_linux and not force_cli:
+        print("No graphical display detected; starting Debian App Builder CLI.")
+    cli_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cli.py")
+    result = subprocess.run([sys.executable, cli_path, *arguments], check=False)
+    raise SystemExit(result.returncode)
+
+if force_gui and headless_linux:
+    raise SystemExit("No graphical display found; cannot launch the GUI.")
+
+sys.argv = [sys.argv[0], *arguments]
+
+import tkinter as tk
 from tkinter import filedialog, messagebox
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 import customtkinter as ctk
 import core as c
 from core import create_deb_structure
-VERSION = "v3.0"
+VERSION = "v3.1-dev-test"
 
 # Fix CustomTkinter "invalid command name ...check_dpi_scaling" / "...update" after race
 # This pops every time write_files() loads because ScalingTracker / AppearanceModeTracker
@@ -97,7 +125,7 @@ ICON_CANDIDATES = [
 ICON_PATH = next((p for p in ICON_CANDIDATES if p.exists()), ICON_CANDIDATES[0])
 if platform.system() == "Windows":
     WINDOW_ICON_PATH = ICON_PATH.with_suffix(".ico")
-print('''THIS PROJECT IS OPEN-SOURCE, YOU CAN MODIFY, DISTRIBUTE AND USE IT FREELY.\nHowever you must credit the original author and the project repository if you use it in your own project.\nSincerely Tuffgit21\nsite:https://tuffgit21.github.io/\nGithub repository:https://github.com/tuffgit21/Debian-App-Builder/ 
+print('''THIS PROJECT IS OPEN-SOURCE, YOU CAN MODIFY, DISTRIBUTE AND USE IT FREELY.\nHowever you must credit the original author and the project repository if you use it in your own project.\nSincerely tuffgit21\nsite:https://tuffgit21.is-a.dev/\nGithub repository:https://github.com/tuffgit21/Debian-App-Builder/ 
     ''')
 
 def get_build_environment():
@@ -213,6 +241,8 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
     app.title(f"Debian App Builder (WRITE MODE) {VERSION}")
     app.resizable(False, False)
     window_icon = load_window_icon(app)
+    if platform.system() == "Linux":
+        app.wm_class("debian-app-builder","Debian App Builder")
 
     # ---------- Header ----------
     header = ctk.CTkFrame(app, fg_color="transparent")
@@ -2130,8 +2160,9 @@ root = ctk.CTk()
 center_window(root, 420, 590)
 root.resizable(False, False)
 root.title(f"Debian App Builder {VERSION}")
+if platform.system == "Linux":
+    root.wm_class("debian-app-builder","Debian App Builder")
 window_icon = load_window_icon(root)
-
 # ---------- Header ----------
 header = ctk.CTkFrame(root, fg_color="transparent")
 header.pack(fill="x", padx=24, pady=(28, 10))
