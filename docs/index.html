@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debian App Builder - Documentation</title>
+    <meta name="description" content="Debian App Builder is an open-source tool that simplifies creating Debian (.deb) packages with an intuitive graphical interface">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <link rel="manifest" href="../manifest.json" />
+    <meta name="theme-color" content="#A80030" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Debian App Builder" />
+    <link rel="apple-touch-icon" href="../DebAppBuilderLogo.png" />
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <header class="hdiv">
+        <a class="hp" href="../index.html"><img src="../DebAppBuilderLogo.svg" alt="Debian App Builder" style="width:40px; height:40px; vertical-align:middle; border-radius:7px; margin-right:8px; border:1px none var(--border)">Debian App Builder - Docs</a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-navigation">
+            <span class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+            <span class="sr-only">Toggle navigation</span>
+        </button>
+        <nav class="hnav" id="main-navigation">
+        <a href="../index.html" class="hbutton" style="background-color: #434242bf;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-undo-2 preview-icon"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg> Back To Home</a>
+        <a class="hbutton" href="#about"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info preview-icon"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>About</a>
+        <a class="hbutton" href="#install"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download preview-icon"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Installation</a>
+        <a class="hbutton" href="#testing"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hammer preview-icon"><path d="m15 12-9.373 9.373a1 1 0 0 1-3.001-3L12 9"/><path d="m18 15 4-4"/><path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172v-.344a2 2 0 0 0-.586-1.414l-1.657-1.657A6 6 0 0 0 12.516 3H9l1.243 1.243A6 6 0 0 1 12 8.485V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/></svg>Testing Version</a>
+        <a class="hbutton" href="#usage"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book preview-icon"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg>Usage</a>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section class="intro" id="top">
+            <p class="eyebrow">LATEST DEBIAN APP BUILDER VERSION — <a id="version" class="eyebrow">v3.0</a></p>
+            <h1 id="about-title">
+            <span style="color:var(--accent)">Debian App Builder</span> Documentation.</h1>
+            
+        </section>
+        <section class="card reveal" id="about">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+                <h2 style="margin:0">About Debian App Builder</h2>
+            </div>
+            <h5 class="motto">Debian Packaging. Simplified.</h5>
+
+            <h4>Simplifying Debian Package Creation</h4>
+            <p><span style="color:var(--accent)">Debian App Builder</span> is an open-source project designed to simplify the creation of Debian packages <code>.deb</code> through an accessible graphical interface.</p>
+            <p>Built with <code>Python</code> and <code>CustomTkinter</code>,<span style="color:var(--accent)"> Debian App Builder</span> aims to make Linux software packaging more approachable by helping developers organize application files and generate Debian packages without manually handling every step of the process.</p>
+
+
+            <h4>Our Mission</h4>
+            <p>Our mission is to make Debian packaging easier, more accessible, and more efficient for developers of all experience levels. Whether you're learning Linux development or preparing your own application for distribution, <span style="color:var(--accent)">Debian App Builder</span> aims to simplify your workflow.</p>
+
+
+            <h4>Key Features</h4>
+            <ul>
+                <li><p>Debian Package Creation: Generate <code>.deb</code> packages for Debian-based Linux distributions.</p></li>
+                <li> <p>Graphical Interface: Configure packages through a user-friendly GUI.</p></li>
+                <li><p>Package Organization: Help structure application files and package metadata correctly.</p></li>
+                <li><p>Desktop Integration: Support application icons and desktop entries.</p></li>
+                <li><p>Continuous Improvement: Ongoing development focused on reliability, usability, and packaging features.</p></li>
+            </ul>
+            <strong>Note:</strong>
+            <p>Feature availability may vary between development versions.</p>
+
+
+            <h4>Built for the Debian Ecosystem</h4>
+            <p><span style="color:var(--accent)">Debian App Builder</span> focuses on the Debian package format and the tools used throughout the Debian ecosystem. Generated packages must still meet their target system's architecture, dependency, and compatibility requirements.</p>
+
+
+            <h4>Development</h4>
+            <p><span style="color:var(--accent)">Debian App Builder</span> is actively developed, with ongoing work focused on improving its interface, package-generation workflow, and overall reliability. Future development plans include expanding automation and command-line capabilities.</p>
+
+
+            <h4>Open Source</h4>
+            <p><span style="color:var(--accent)">Debian App Builder</span> is developed under the <a href="https://github.com/tuffgit21/">tuffgit21</a> GitHub account. Explore the <a href="https://github.com/tuffgit21/Debian-App-Builder">source code</a>, follow development, report <a href="https://github.com/tuffgit21/Debian-App-Builder/issues/">issues</a>, or <a href="https://github.com/tuffgit21/Debian-App-Builder/pulls">contribute</a>  through the project's GitHub repository.</p>
+
+
+            <h4>Thank You</h4>
+            <p>Thank you for checking out <span style="color:var(--accent)">Debian App Builder</span> and supporting independent software development. Every suggestion, bug report, and contribution helps the project improve. Build for Debian. Package with confidence.</p>
+        </section>
+        <section class="card reveal" id="install">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+                <h2 style="margin:0">Installation</h2>
+            </div>
+            <p><span style="color:var(--accent)">Debian App Builder</span> requires <code>customtkinter</code> + <code>python3-tk</code> + <code>dpkg-dev</code> on Debian/WSL.</p>
+            <pre style="margin:8px 0 0; background:#0f0f0f; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:.70rem; line-height:1.5; overflow-x:auto; overflow-y:hidden; max-width:100%; box-sizing:border-box; white-space:pre-wrap; word-break:break-all; overflow-wrap:anywhere"><code style="white-space:pre-wrap; word-break:break-all; overflow-wrap:anywhere"># Install the stable release from APT repo
+echo "deb [signed-by=/usr/share/keyrings/tuffgit21.gpg] https://tuffgit21.is-a.dev/tuffgit21-APT-repo stable main" | 
+sudo tee /etc/apt/sources.list.d/tuffgit21.list
+sudo apt update
+sudo apt install debian-app-builder
+</code></pre>
+<p>Or Download the .deb/.exe directly</p> <a class="btn" href="../index.html#downloads">Download Debian App Builder</a>
+        </section>
+
+        <section class="card reveal" id="testing">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+                <h2 style="margin:0">Install Testing Version</h2>
+                <span class="badge" style="background:var(--accent); color:#fff; padding:3px 9px; border-radius:999x; font-size:.7em">testing</span>
+            </div>
+            <p>To install the latest Testing version, use the testing APT repository:</p>
+            <pre style="margin:8px 0 0; background:#0f0f0f; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:.70rem; line-height:1.5; overflow-x:auto; overflow-y:hidden; max-width:100%; box-sizing:border-box; white-space:pre-wrap; word-break:break-all; overflow-wrap:anywhere"><code style="white-space:pre-wrap; word-break:break-all; overflow-wrap:anywhere"># Add the testing repository
+echo "deb [signed-by=/usr/share/keyrings/tuffgit21.gpg] https://tuffgit21.is-a.dev/tuffgit21-APT-repo testing main" | sudo tee /etc/apt/sources.list.d/tuffgit21.list
+sudo apt update
+
+# Install the testing version
+sudo apt install debian-app-builder/testing
+
+# Or upgrade from stable to testing
+sudo apt install -t testing debian-app-builder</code></pre>
+            <p><strong>Note:</strong> The testing version may contain newer features but could be less stable than the stable release. Always backup your work before installing testing versions.</p>
+        </section>
+        <section class="card reveal" id="wsl-setup">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+                <h2 style="margin:0">How to Set Up WSL on Windows 10/11</h2>
+            </div>
+            <p><span style="color:var(--accent)">Debian App Builder</span> On Windows requires <a href="https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux">Windows Subsystem for Linux</a> (WSL) to build a debian package, while the app generates the structure and necessary files. <br/> To set it up, please follow this <a href="https://learn.microsoft.com/en-us/windows/wsl/install">guide</a>.</p>
+            <p>If you followed the guide and successfully set WSL, you can add the <a href="https://tuffgit21.is-a.dev/tuffgit21-APT-repo/">software repo</a> and <a href="#install">install</a> <span style="color:var(--accent)">Debian App Builder</span>.</p>
+        </section>
+        <section class="card reveal" id="usage">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+                <h2 style="margin:0">How to Use</h2>
+            </div>
+            <ol style="margin:12px 0 0; padding-left:24px">
+                <li><strong>Launch the app:</strong> Run <code>debian-app-builder</code> from your applications menu or terminal.</li>
+                <li><strong>Select input type:</strong> Choose Python app, C source code, or app folder.</li>
+                <li><strong>Configure metadata:</strong> Fill in Name, Version, Architecture, Dependencies, and Maintainer.</li>
+                <li><strong>Optional features:</strong> Enable <code>.desktop</code> categories, Terminal options, or vendor Python dependencies.</li>
+                <li><strong>Build:</strong> Click the <strong>Build</strong> button to generate your <code>.deb</code> package.</li>
+                <li><strong>Install:</strong> Use <code>sudo dpkg -i your-package.deb</code> or double-click the .deb file.</li>
+            </ol>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2026 Debian App Builder · Built with care.</p>
+    </footer>
+    <script src="../script.js"></script>
+    <script>
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+        // Screenshot gallery scroll controls (reusable template)
+        document.querySelectorAll('.gallery').forEach(g => {
+            const track = g.querySelector('.screenshots');
+            const step = () => track.querySelector('.shot')?.offsetWidth + 20 || 300;
+            g.querySelector('.gallery-btn.prev')?.addEventListener('click', () => track.scrollBy({ left: -step(), behavior: 'smooth' }));
+            g.querySelector('.gallery-btn.next')?.addEventListener('click', () => track.scrollBy({ left: step(), behavior: 'smooth' }));
+        });
+
+        // Lightbox preview (guarded: docs page has no #lightbox element)
+        const lb = document.getElementById('lightbox');
+        const lbImg = lb?.querySelector('img');
+        if (lb && lbImg) {
+            document.querySelectorAll('.shot img').forEach(img => {
+                img.style.cursor = 'zoom-in';
+                img.addEventListener('click', () => {
+                    lbImg.src = img.src;
+                    lbImg.alt = img.alt;
+                    lb.classList.add('open');
+                    lb.setAttribute('aria-hidden', 'false');
+                });
+            });
+            const closeLb = () => { lb.classList.remove('open'); lb.setAttribute('aria-hidden', 'true'); };
+            lb.addEventListener('click', closeLb);
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); });
+        }
+
+        // Social media popup — fixed: scroll lock, focus, z-index, backdrop click, Escape
+        // (guarded: docs page has no #social-popup element)
+        const sp = document.getElementById('social-popup');
+        const openBtn = document.getElementById('open-social');
+        if (sp) {
+            let lastFocus = null;
+            const openSp = () => {
+                lastFocus = document.activeElement;
+                sp.classList.add('open');
+                sp.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                // move focus to close button for accessibility
+                sp.querySelector('.social-close')?.focus();
+            };
+            const closeSp = () => {
+                if(!sp.classList.contains('open')) return;
+                sp.classList.remove('open');
+                sp.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                if(lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+            };
+            openBtn?.addEventListener('click', openSp);
+            sp.querySelector('.social-close')?.addEventListener('click', closeSp);
+            sp.addEventListener('click', e => { if (e.target === sp) closeSp(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape' && sp.classList.contains('open')) closeSp(); });
+        } else {
+            openBtn?.addEventListener('click', () => {});
+        }
+
+        // PyShell-like hdiv toggle (small header with icon) — fixed anchor offset
+        const header = document.querySelector('.hdiv');
+        const toggle = document.querySelector('.menu-toggle');
+        const nav = document.getElementById('main-navigation');
+        if(toggle && nav){
+            toggle.addEventListener('click', ()=>{
+                const open = nav.classList.toggle('is-open');
+                toggle.setAttribute('aria-expanded', open);
+            });
+            const closeNav = ()=>{ nav.classList.remove('is-open'); toggle.setAttribute('aria-expanded','false'); };
+            // offset-aware smooth scroll (prevents sticky header covering target / "goes to another section")
+            const scrollToHash = (hash, pushHistory=true)=>{
+                const target = document.querySelector(hash);
+                if(!target) return false;
+                closeNav();
+                const headerH = header ? header.offsetHeight : 60;
+                const top = target.getBoundingClientRect().top + window.scrollY - headerH - 12;
+                // double rAF ensures layout after menu close is applied before measuring scroll
+                requestAnimationFrame(()=> requestAnimationFrame(()=>{
+                    window.scrollTo({top: Math.max(0, top), behavior: 'smooth'});
+                    if(pushHistory) history.pushState(null, '', hash);
+                }));
+                return true;
+            };
+            nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',(e)=>{
+                const href = a.getAttribute('href');
+                if(href && href.startsWith('#')){
+                    if(scrollToHash(href)) e.preventDefault();
+                    else closeNav();
+                } else {
+                    closeNav();
+                }
+            }));
+            // also handle brand link #top outside nav
+            document.querySelectorAll('a[href^="#"]').forEach(a=>{
+                if(nav.contains(a)) return;
+                a.addEventListener('click', (e)=>{
+                    const href = a.getAttribute('href');
+                    if(href && href.length>1 && document.querySelector(href)){
+                        if(scrollToHash(href)) e.preventDefault();
+                    }
+                });
+            });
+            // correct initial load with hash (e.g. /#downloads) after layout
+            if(location.hash){
+                const h = location.hash;
+                // let browser do initial jump, then correct offset
+                window.addEventListener('load', ()=>{
+                    setTimeout(()=>{
+                        const t = document.querySelector(h);
+                        if(t){
+                            const headerH = header ? header.offsetHeight : 60;
+                            const top = t.getBoundingClientRect().top + window.scrollY - headerH - 12;
+                            window.scrollTo({top: Math.max(0, top), behavior: 'auto'});
+                        }
+                    }, 80);
+                });
+            }
+            document.addEventListener('keydown', e=>{ if(e.key==='Escape' && nav.classList.contains('is-open')) closeNav(); });
+        }
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js', {scope: './'}).catch(e => console.warn('SW failed', e));
+          });
+        }
+    </script>
+</body>
+</html>
