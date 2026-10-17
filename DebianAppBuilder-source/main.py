@@ -40,7 +40,7 @@ sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 import customtkinter as ctk
 import core as c
 from core import create_deb_structure
-VERSION = "v3.1-dev-test.1"
+VERSION = "v3.1-dev-test.2"
 
 # Fix CustomTkinter "invalid command name ...check_dpi_scaling" / "...update" after race
 # This pops every time write_files() loads because ScalingTracker / AppearanceModeTracker
@@ -125,7 +125,7 @@ ICON_CANDIDATES = [
 ICON_PATH = next((p for p in ICON_CANDIDATES if p.exists()), ICON_CANDIDATES[0])
 if platform.system() == "Windows":
     WINDOW_ICON_PATH = ICON_PATH.with_suffix(".ico")
-print('''THIS PROJECT IS OPEN-SOURCE, YOU CAN MODIFY, DISTRIBUTE AND USE IT FREELY.\nHowever you must credit the original author and the project repository if you use it in your own project.\nSincerely tuffgit21\nsite:https://tuffgit21.is-a.dev/\nGithub repository:https://github.com/tuffgit21/Debian-App-Builder/ 
+print('''THIS PROJECT IS OPEN-SOURCE, YOU CAN MODIFY, DISTRIBUTE AND USE IT FREELY.\nHowever you must credit the original author and the project repository if you use it in your own project.\nSincerely tuffgit21\nsite:https://tuffgit21.is-a.dev/Debian-App-Builder\nGithub repository:https://github.com/tuffgit21/Debian-App-Builder/ 
     ''')
 
 def get_build_environment():
@@ -210,10 +210,21 @@ def center_window(window, width, height):
     x = (screen_width // 2) - (width // 2)
     y = (screen_height // 2) - (height // 2)
     window.geometry(f"{width}x{height}+{x}+{y}")
+
+
+def _set_linux_window_class(window):
+    if platform.system() != "Linux":
+        return
+    try:
+        window.tk.call("wm", "class", window._w, "debian-app-builder", "Debian App Builder")
+    except (AttributeError, tk.TclError):
+        pass
+
+
 def writefiles(package_root, package_name, package_version="", saved_data=None):
     build_mode, build_command, build_system = get_build_environment()
     ctk.set_appearance_mode("system")
-    app = ctk.CTk()
+    app = ctk.CTkToplevel(root)
     # Suppress CustomTkinter tracker TclError on this Toplevel as well
     try:
         _orig_app_report = app.report_callback_exception
@@ -241,8 +252,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
     app.title(f"Debian App Builder (WRITE MODE) {VERSION}")
     app.resizable(False, False)
     window_icon = load_window_icon(app)
-    if platform.system() == "Linux":
-        app.wm_class("debian-app-builder","Debian App Builder")
+    _set_linux_window_class(app)
 
     # ---------- Header ----------
     header = ctk.CTkFrame(app, fg_color="transparent")
@@ -1260,6 +1270,7 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
             icon=desktop_icon.get().strip(),
             terminal=desktop_term.get().strip(),
             path=_path_val,
+            app_version=version.get().strip(),
         )
         if desktop_path:
             file_state["desktop_created"] = True
@@ -2070,6 +2081,10 @@ def writefiles(package_root, package_name, package_version="", saved_data=None):
                 app.quit()
             except Exception:
                 pass
+        try:
+            root.destroy()
+        except Exception:
+            pass
 
     try:
         app.protocol("WM_DELETE_WINDOW", _on_writefiles_close)
@@ -2126,27 +2141,15 @@ def build_structure():
         )
         return
 
-    # Properly tear down root before opening writefiles CTk – avoid CustomTkinter after race
-    # (ScalingTracker / AppearanceModeTracker keep `after` loops that raise
-    #  "invalid command name ...check_dpi_scaling" after destroy)
+    # Keep the Tk interpreter alive while write mode opens its Toplevel.
     try:
         root.update_idletasks()
     except Exception:
         pass
     try:
-        # withdraw first so trackers see destroyed state earlier, suppress pending afters
         root.withdraw()
     except Exception:
         pass
-    try:
-        root.destroy()
-    except tk.TclError:
-        pass
-    except Exception:
-        try:
-            root.quit()
-        except Exception:
-            pass
     writefiles(package_root, package_name, version)
 
 
@@ -2160,8 +2163,7 @@ root = ctk.CTk()
 center_window(root, 420, 590)
 root.resizable(False, False)
 root.title(f"Debian App Builder {VERSION}")
-if platform.system == "Linux":
-    root.wm_class("debian-app-builder","Debian App Builder")
+_set_linux_window_class(root)
 window_icon = load_window_icon(root)
 # ---------- Header ----------
 header = ctk.CTkFrame(root, fg_color="transparent")
@@ -2326,9 +2328,9 @@ def _load_saved_session_startup():
                 pkg_name = data.get("package_name") or data.get("fields", {}).get("package", "")
                 pkg_ver = data.get("package_version") or data.get("fields", {}).get("version", "")
                 if pkg_root and Path(pkg_root).exists():
-                    # destroy root and open writefiles with saved data
+                    # Hide the initial window and open write mode in a Toplevel.
                     try:
-                        root.destroy()
+                        root.withdraw()
                     except Exception:
                         pass
                     writefiles(pkg_root, pkg_name, pkg_ver, saved_data=data)

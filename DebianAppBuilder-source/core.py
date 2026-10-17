@@ -371,7 +371,7 @@ def _find_site_packages(venv_dir: str) -> str:
 
 def choose_and_copy(destination_dir):
     """
-    Prompts user to select a File (Python, C, Image) OR a Folder.
+    Prompts user to select a File (Python, C) OR a Folder.
     Compiles .c files into executable binaries automatically via gcc.
     """
     choice = messagebox.askyesno(
@@ -732,8 +732,10 @@ def write_desktop_file(
     categories="Utility",
     icon="",
     path="",
+    app_version="",
 ):
     term_str = str(terminal).strip().lower() if terminal is not None else ""
+    app_version_str = str(app_version).strip().replace("\r", "").replace("\n", " ")
 
     if term_str == "":
         messagebox.showerror(
@@ -827,6 +829,8 @@ def write_desktop_file(
         with open(desktop_path, "w", encoding="utf-8", newline="\n") as desktop_file:
             desktop_file.write("[Desktop Entry]\n")
             desktop_file.write("Version=1.0\n")
+            if app_version_str:
+                desktop_file.write(f"X-App-Version={app_version_str}\n")
             desktop_file.write("Type=Application\n")
             desktop_file.write(f"Name={name}\n")
             desktop_file.write(f"Exec={exec_command}\n")
